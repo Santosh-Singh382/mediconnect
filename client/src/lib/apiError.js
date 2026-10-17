@@ -1,0 +1,6 @@
+export function getApiErrorMessage(
+  error,
+  fallback = 'Something went wrong. Please try again.',
+) {
+  return error?.response?.data?.message || fallback
+}

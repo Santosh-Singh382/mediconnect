@@ -1,0 +1,19 @@
+# Logs
+
+*.log
+npm-debug.log*
+
+# Dependencies
+
+node_modules/
+
+# Environment
+
+.env
+.env.*
+!.env.example
+
+# Uploaded files
+
+uploads/*
+!uploads/.gitkeep
