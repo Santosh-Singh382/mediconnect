@@ -1,5 +1,7 @@
 require('dotenv').config({ quiet: true })
 
+const path = require('path')
+
 const parseOrigins = (value) =>
   (value || '')
     .split(',')
@@ -22,6 +24,12 @@ const env = {
   mongodbUri: required('MONGODB_URI'),
   clientOrigins: parseOrigins(process.env.CLIENT_URL),
   jwtSecret: required('JWT_SECRET'),
+  medicalDocumentMaxSizeMb: Number(process.env.MEDICAL_DOCUMENT_MAX_SIZE_MB) || 10,
+  // Private directory where uploaded medical documents are stored. Overridable
+  // so tests can point at a temp location instead of the real uploads folder.
+  medicalDocumentUploadDir:
+    process.env.MEDICAL_DOCUMENT_UPLOAD_DIR ||
+    path.join(__dirname, '..', '..', 'uploads', 'medical-documents'),
 }
 
 if (env.clientOrigins.length === 0) {

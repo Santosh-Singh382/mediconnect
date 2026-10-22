@@ -14,6 +14,7 @@ const QUICK_ACTIONS = [
   { title: 'Appointments', to: '/doctor/appointments' },
   { title: 'Patients' },
   { title: 'Prescriptions', to: '/prescriptions' },
+  { title: 'Medical Records', to: '/medical-records' },
   { title: 'Schedule' },
   { title: 'Consultations' },
 ]

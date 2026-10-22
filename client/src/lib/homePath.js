@@ -11,6 +11,7 @@ export function homeLinksFor(user) {
       { to: '/patient/profile', label: 'Profile' },
       { to: '/appointments', label: 'My Appointments' },
       { to: '/prescriptions', label: 'Prescriptions' },
+      { to: '/medical-records', label: 'Medical Records' },
       { to: '/doctors', label: 'Find a Doctor' },
     ]
   }
@@ -20,6 +21,7 @@ export function homeLinksFor(user) {
       { to: '/doctor/profile', label: 'Profile' },
       { to: '/doctor/appointments', label: 'Appointments' },
       { to: '/prescriptions', label: 'Prescriptions' },
+      { to: '/medical-records', label: 'Medical Records' },
     ]
   }
   return []

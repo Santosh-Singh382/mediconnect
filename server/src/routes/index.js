@@ -7,6 +7,8 @@ const doctorsRoutes = require('./doctors.routes')
 const appointmentRoutes = require('./appointment.routes')
 const chatRoutes = require('./chat.routes')
 const prescriptionRoutes = require('./prescription.routes')
+const medicalRecordRoutes = require('./medicalRecord.routes')
+const medicalDocumentRoutes = require('./medicalDocument.routes')
 
 const router = express.Router()
 
@@ -18,5 +20,7 @@ router.use('/doctors', doctorsRoutes)
 router.use('/appointments', appointmentRoutes)
 router.use('/chat', chatRoutes)
 router.use('/prescriptions', prescriptionRoutes)
+router.use('/medical-records', medicalRecordRoutes)
+router.use('/medical-documents', medicalDocumentRoutes)
 
 module.exports = router

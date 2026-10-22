@@ -989,6 +989,107 @@ the shared convention: `400 VALIDATION_ERROR` (malformed ID or body),
 - `{ patientId: 1, createdAt: -1 }` — patient history.
 - `{ doctorId: 1, createdAt: -1 }` — doctor's authored list.
 
+## Medical records module
+
+After a consultation is completed the doctor can attach **medical records** to
+that appointment, and the patient can read them. A record is the durable clinical
+document behind a visit (consultation note, diagnosis, lab report, linked
+prescription, other), whereas the prescription is the medicine list. This module
+does **not** implement versioning, OCR, or AI features.
+
+### Medical document upload (patient)
+
+- Patients can upload their own medical documents (lab reports, scans, prescriptions, discharge summaries, certificates, consultation documents, or other files) from `/medical-records`.
+- Supported file types: PDF, JPG, JPEG, PNG. Maximum file size: 10 MB per file.
+- Uploads are stored locally in `server/uploads/medical-documents/`. **Do not serve these files publicly.** Download/preview use an authenticated API that reads the file on demand.
+- Privacy: documents are private by default. Patients can list/view/download/delete their own uploads. Doctors may only access documents linked to a MedicalRecord they created. Admin has no unrestricted access.
+- Local storage only: for a free college/demo deployment use this local storage. Production should use private cloud object storage with signed access URLs.
+- Document can optionally be linked to an existing medical record belonging to the patient; unlinked documents remain patient-private.
+- Security: safe generated filenames, path traversal protection, MIME + magic-byte validation, Content-Disposition with safe filename, no token in URLs, no `passwordHash`/tokens/emails/phone/physical paths returned.
+
+### Workflow
+
+Patient books → doctor confirms → consultation completed → doctor creates one or
+more medical records → the patient reads them. Unlike prescriptions, **multiple
+records are allowed for the same consultation** (for example a consultation note
+plus a lab report), so `appointmentId` is indexed but deliberately **not** unique.
+A record can be created only when the appointment's stored status is `COMPLETED`;
+every other status is rejected with `409 CONFLICT`.
+
+### Authorization and ownership model
+
+- **Creation is doctor-only** (`requireRole('DOCTOR')`). Patients, pharmacy, and
+  admin roles are rejected with `403`.
+- The doctor and patient are **derived from the stored appointment** — a
+  client-supplied `doctorId` / `patientId` is never trusted or stored. A doctor
+  can only create records for their own appointment (`403 FORBIDDEN` otherwise).
+- **Visibility is scoped by role.** A patient can only list and read records about
+  themselves. A doctor can only list and read records **they created**. A record
+  belonging to another patient or another doctor returns `403`; unknown IDs return
+  `404`, and malformed IDs return `400`.
+
+### Data model
+
+`MedicalRecord` stores `patientId`, `doctorId`, `appointmentId`, optional
+`prescriptionId`, `recordType` (enum: `CONSULTATION`, `DIAGNOSIS`, `LAB_REPORT`,
+`PRESCRIPTION`, `OTHER`), `title`, optional `diagnosis`, `summary`, optional
+`notes`, and `recordDate`. No personal data is duplicated into the record;
+names/specialization are joined at read time.
+
+When `prescriptionId` is supplied it must exist **and** belong to the same
+patient, doctor, and appointment; anything else is rejected with
+`400 VALIDATION_ERROR`.
+
+### Privacy
+
+Responses never include `passwordHash`, tokens, emails, or phone numbers.
+Participants are serialized minimally: `patient: { id, name }` and
+`doctor: { id, name, specialization }`. The appointment block exposes only
+`id`, `appointmentDate`, `startTime`, `endTime`, and `type`.
+
+### REST endpoints
+
+| Endpoint | Method | Role | Purpose |
+| --- | --- | --- | --- |
+| `/api/medical-records` | `POST` | `DOCTOR` | Create a record for a `COMPLETED` appointment |
+| `/api/medical-records` | `GET` | `PATIENT` / `DOCTOR` | Records about the patient / created by the doctor |
+| `/api/medical-records/:recordId` | `GET` | Owner | A single record (patient-owned or doctor-created) |
+
+The list endpoint supports pagination (`page`, `limit`, max `50`) and optional
+whitelisted filters (`recordType`, `from` / `to` date range). Unknown query
+parameters are ignored, and invalid filters return `400 VALIDATION_ERROR`; no
+raw MongoDB operators are ever accepted.
+
+All endpoints require an `Authorization: Bearer <token>` header. Errors follow
+the shared convention: `400 VALIDATION_ERROR` (malformed ID, body, or filter),
+`401` unauthenticated, `403` wrong role/not the owner, `404` not found, `409`
+non-completed appointment.
+
+### Frontend
+
+- `/medical-records` (`MyMedicalRecordsPage`) — role-aware list with a record
+  type filter, pagination, loading/empty/error states, and a link per record.
+- `/medical-records/:recordId` (`MedicalRecordDetailsPage`) — full detail view
+  with parties, consultation, diagnosis, summary, notes, and a link to the
+  linked prescription when present.
+- `/appointments/:appointmentId/medical-record/new` (`CreateMedicalRecordPage`)
+  — doctor-only form with a read-only consultation summary, required-field
+  validation, double-submit protection, an optional "link the related
+  prescription" control, a guard for appointments that are not `COMPLETED`, and
+  a success state.
+- The doctor appointment list shows **Create Medical Record** on every
+  `COMPLETED` appointment it owns. The patient dashboard quick action and both
+  role navs link to `/medical-records`.
+
+### Database indexes
+
+`MedicalRecord` adds:
+
+- `{ patientId: 1, recordDate: -1 }` — patient record timeline.
+- `{ doctorId: 1, recordDate: -1 }` — doctor's created records.
+- `{ appointmentId: 1 }` — records for a consultation (**not** unique, so a
+  consultation can produce several records).
+
 ## Running the backend tests
 
 ```bash
@@ -998,8 +1099,9 @@ npm test
 
 Tests run against a dedicated database (`mediconnect_test`) and cover
 registration, login, JWT validation, role authorization, the patient, doctor,
-doctor discovery, appointment, and real-time chat modules (REST and Socket.IO),
-plus regression checks.
+doctor discovery, appointment, real-time chat (REST and Socket.IO), consultation
+type enforcement, prescription, and medical records modules, plus regression
+checks.
 
 ## Documentation
 

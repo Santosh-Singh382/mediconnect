@@ -14,7 +14,7 @@ const QUICK_ACTIONS = [
   { title: 'Find a Doctor', to: '/doctors' },
   { title: 'Appointments', to: '/appointments' },
   { title: 'Prescriptions', to: '/prescriptions' },
-  { title: 'Medical Records' },
+  { title: 'Medical Records', to: '/medical-records' },
   { title: 'Pharmacy' },
 ]
 

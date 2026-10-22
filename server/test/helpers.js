@@ -16,6 +16,8 @@ const PatientProfile = require('../src/models/PatientProfile')
 const DoctorProfile = require('../src/models/DoctorProfile')
 const Appointment = require('../src/models/Appointment')
 const Prescription = require('../src/models/Prescription')
+const MedicalRecord = require('../src/models/MedicalRecord')
+const MedicalDocument = require('../src/models/MedicalDocument')
 const { signAccessToken } = require('../src/utils/jwt')
 
 let server
@@ -53,6 +55,14 @@ async function clearPrescriptions() {
   await Prescription.deleteMany({})
 }
 
+async function clearMedicalRecords() {
+  await MedicalRecord.deleteMany({})
+}
+
+async function clearMedicalDocuments() {
+  await MedicalDocument.deleteMany({})
+}
+
 async function request(path, { method = 'GET', body, token } = {}) {
   const headers = {}
   if (body !== undefined) {
@@ -66,6 +76,44 @@ async function request(path, { method = 'GET', body, token } = {}) {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+
+  let json = null
+  try {
+    json = await response.json()
+  } catch {
+    json = null
+  }
+
+  return { status: response.status, body: json, headers: response.headers }
+}
+
+// Multipart upload helper. Builds a FormData body with an optional file and
+// extra text fields, so tests exercise the real multipart path.
+async function uploadRequest(
+  path,
+  { method = 'POST', token, fields = {}, file } = {},
+) {
+  const form = new FormData()
+
+  if (file) {
+    form.append('file', new Blob([file.buffer], { type: file.contentType }), file.filename)
+  }
+  for (const [key, value] of Object.entries(fields)) {
+    if (value !== undefined && value !== null) {
+      form.append(key, String(value))
+    }
+  }
+
+  const headers = {}
+  if (token) {
+    headers.authorization = `Bearer ${token}`
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    method,
+    headers,
+    body: form,
   })
 
   let json = null
@@ -161,7 +209,10 @@ module.exports = {
   clearDoctorProfiles,
   clearAppointments,
   clearPrescriptions,
+  clearMedicalRecords,
+  clearMedicalDocuments,
   request,
+  uploadRequest,
   createUser,
   createDoctor,
   registerPayload,
@@ -172,5 +223,7 @@ module.exports = {
   DoctorProfile,
   Appointment,
   Prescription,
+  MedicalRecord,
+  MedicalDocument,
   baseUrl: () => baseUrl,
 }

@@ -377,22 +377,31 @@ export default function DoctorAppointmentsPage() {
                           {consultationAction.label}
                         </Link>
                       )}
-                      {status === 'COMPLETED' &&
-                        (appointment.prescriptionId ? (
+                      {status === 'COMPLETED' && (
+                        <>
+                          {appointment.prescriptionId ? (
+                            <Link
+                              to={`/prescriptions/${appointment.prescriptionId}`}
+                              className="rounded-md border border-brand-200 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
+                            >
+                              View Prescription
+                            </Link>
+                          ) : (
+                            <Link
+                              to={`/doctor/appointments/${appointment.id}/prescription`}
+                              className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-700"
+                            >
+                              Create Prescription
+                            </Link>
+                          )}
                           <Link
-                            to={`/prescriptions/${appointment.prescriptionId}`}
-                            className="rounded-md border border-brand-200 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
+                            to={`/appointments/${appointment.id}/medical-record/new`}
+                            className="rounded-md border border-teal-200 px-3 py-1.5 text-sm font-medium text-teal-700 transition hover:bg-teal-50"
                           >
-                            View Prescription
+                            Create Medical Record
                           </Link>
-                        ) : (
-                          <Link
-                            to={`/doctor/appointments/${appointment.id}/prescription`}
-                            className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-700"
-                          >
-                            Create Prescription
-                          </Link>
-                        ))}
+                        </>
+                      )}
                       <button
                         type="button"
                         onClick={() => setExpandedId(expanded ? null : appointment.id)}

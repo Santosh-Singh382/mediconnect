@@ -18,6 +18,10 @@ import AudioConsultationPage from './pages/AudioConsultationPage.jsx'
 import MyPrescriptionsPage from './pages/MyPrescriptionsPage.jsx'
 import PrescriptionDetailsPage from './pages/PrescriptionDetailsPage.jsx'
 import CreatePrescriptionPage from './pages/CreatePrescriptionPage.jsx'
+import MyMedicalRecordsPage from './pages/MyMedicalRecordsPage.jsx'
+import MedicalRecordDetailsPage from './pages/MedicalRecordDetailsPage.jsx'
+import CreateMedicalRecordPage from './pages/CreateMedicalRecordPage.jsx'
+import UploadMedicalDocumentPage from './pages/UploadMedicalDocumentPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 
@@ -98,6 +102,38 @@ export default function App() {
         element={
           <ProtectedRoute roles={['DOCTOR']}>
             <CreatePrescriptionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/medical-records"
+        element={
+          <ProtectedRoute roles={['PATIENT', 'DOCTOR']}>
+            <MyMedicalRecordsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/medical-records/upload"
+        element={
+          <ProtectedRoute roles={['PATIENT']}>
+            <UploadMedicalDocumentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/medical-records/:recordId"
+        element={
+          <ProtectedRoute roles={['PATIENT', 'DOCTOR']}>
+            <MedicalRecordDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/appointments/:appointmentId/medical-record/new"
+        element={
+          <ProtectedRoute roles={['DOCTOR']}>
+            <CreateMedicalRecordPage />
           </ProtectedRoute>
         }
       />
