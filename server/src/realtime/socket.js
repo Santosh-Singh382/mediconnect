@@ -7,6 +7,10 @@ const { serializeUser } = require('../utils/serializeUser')
 const chatService = require('../services/chat.service')
 const videoService = require('../services/video.service')
 const audioService = require('../services/audio.service')
+const {
+  notificationRoom,
+  setNotificationIO,
+} = require('./notificationEvents')
 
 // WebRTC signaling is point-to-point: at most two participants per room.
 const MAX_CALL_PARTICIPANTS = 2
@@ -274,6 +278,7 @@ function registerDisconnectHandlers(socket) {
 
 function registerConnectionHandlers(io) {
   io.on('connection', (socket) => {
+    socket.join(notificationRoom(socket.user.id.toString()))
     registerChatHandlers(io, socket)
     for (const channel of CALL_CHANNELS) {
       registerCallHandlers(io, socket, channel)
@@ -292,8 +297,9 @@ function initSocket(httpServer) {
 
   io.use(socketAuthMiddleware)
   registerConnectionHandlers(io)
+  setNotificationIO(io)
 
   return io
 }
 
-module.exports = { initSocket }
+module.exports = { initSocket, notificationRoom }

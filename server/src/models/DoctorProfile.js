@@ -102,6 +102,12 @@ const doctorProfileSchema = new mongoose.Schema(
       },
       index: true,
     },
+    verificationReason: {
+      type: String,
+      trim: true,
+      default: null,
+      maxlength: [500, 'Verification reason cannot exceed 500 characters'],
+    },
   },
   {
     timestamps: true,

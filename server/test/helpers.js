@@ -18,20 +18,36 @@ const Appointment = require('../src/models/Appointment')
 const Prescription = require('../src/models/Prescription')
 const MedicalRecord = require('../src/models/MedicalRecord')
 const MedicalDocument = require('../src/models/MedicalDocument')
+const Pharmacy = require('../src/models/Pharmacy')
+const Medicine = require('../src/models/Medicine')
+const Cart = require('../src/models/Cart')
+const Order = require('../src/models/Order')
+const Notification = require('../src/models/Notification')
+const { initSocket } = require('../src/realtime/socket')
 const { signAccessToken } = require('../src/utils/jwt')
 
 let server
+let io
 let baseUrl
 
-async function startServer() {
+async function startServer({ realtime = false } = {}) {
   await connectDatabase()
   server = http.createServer(app)
+  if (realtime) {
+    io = initSocket(server)
+  }
   await new Promise((resolve) => server.listen(0, resolve))
   baseUrl = `http://127.0.0.1:${server.address().port}`
 }
 
 async function stopServer() {
-  await new Promise((resolve) => server.close(resolve))
+  if (io) {
+    await new Promise((resolve) => io.close(resolve))
+    io = null
+  }
+  if (server && server.listening) {
+    await new Promise((resolve) => server.close(resolve))
+  }
   await disconnectDatabase()
 }
 
@@ -63,8 +79,31 @@ async function clearMedicalDocuments() {
   await MedicalDocument.deleteMany({})
 }
 
-async function request(path, { method = 'GET', body, token } = {}) {
-  const headers = {}
+async function clearPharmacies() {
+  await Pharmacy.deleteMany({})
+}
+
+async function clearMedicines() {
+  await Medicine.deleteMany({})
+}
+
+async function clearCarts() {
+  await Cart.deleteMany({})
+}
+
+async function clearOrders() {
+  await Order.deleteMany({})
+}
+
+async function clearNotifications() {
+  await Notification.deleteMany({})
+}
+
+async function request(
+  path,
+  { method = 'GET', body, token, headers: extraHeaders } = {},
+) {
+  const headers = { ...(extraHeaders || {}) }
   if (body !== undefined) {
     headers['content-type'] = 'application/json'
   }
@@ -211,6 +250,11 @@ module.exports = {
   clearPrescriptions,
   clearMedicalRecords,
   clearMedicalDocuments,
+  clearPharmacies,
+  clearMedicines,
+  clearCarts,
+  clearOrders,
+  clearNotifications,
   request,
   uploadRequest,
   createUser,
@@ -225,5 +269,10 @@ module.exports = {
   Prescription,
   MedicalRecord,
   MedicalDocument,
+  Pharmacy,
+  Medicine,
+  Cart,
+  Order,
+  Notification,
   baseUrl: () => baseUrl,
 }

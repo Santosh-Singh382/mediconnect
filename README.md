@@ -299,9 +299,8 @@ GET /api/patient/dashboard
 Authorization: Bearer <token>
 ```
 
-Returns the user, profile, profile completion, and a statistics block that is
-kept at zero counts until appointments, consultations, prescriptions, medical
-records, and orders are implemented in later modules:
+Returns the user, profile, profile completion, and a statistics block. These
+counters are currently reserved at zero and are not yet wired to their modules:
 
 ```json
 {
@@ -1090,6 +1089,658 @@ non-completed appointment.
 - `{ appointmentId: 1 }` — records for a consultation (**not** unique, so a
   consultation can produce several records).
 
+## Pharmacy foundation
+
+A `PHARMACY` account owns a single pharmacy profile. The verified profile owns
+the pharmacy's medicine inventory, and patients or visitors can search the
+public catalogue. Patients can save medicines in separate pharmacy carts and
+place Cash on Delivery orders; online payments, pharmacy order fulfilment, and
+delivery tracking are not implemented yet.
+
+### Profile fields
+
+| Field              | Notes                                                        |
+| ------------------ | ------------------------------------------------------------ |
+| pharmacyName       | Required, up to 120 characters                               |
+| pharmacistName     | Required, up to 100 characters                               |
+| licenseNumber      | Required and unique, up to 60 characters                     |
+| phone              | Required; validated with the shared phone format             |
+| email              | Optional business contact email                              |
+| address, city, state | Required location details                                  |
+| pincode            | Required 6-digit Indian pincode                              |
+| description        | Optional, up to 1000 characters                              |
+| openingTime, closingTime | Optional `HH:mm` values; must be supplied together and opening must be earlier than closing |
+| verificationStatus | `PENDING`, `APPROVED`, or `REJECTED`; platform-managed        |
+| isActive           | Defaults to `true`; not writable by the pharmacy             |
+
+`userId` is unique, so one account can never own more than one pharmacy profile.
+The owning user is always derived from the JWT; a client-supplied `userId` is
+ignored.
+
+### Verification
+
+Every new profile starts as `PENDING`. Pharmacies can read their own status but
+cannot approve or reject themselves: sending a different `verificationStatus` on
+create or update returns `403 FORBIDDEN`. There is no admin verification UI in
+this phase.
+
+### API endpoints
+
+| Endpoint | Method | Role | Purpose |
+| --- | --- | --- | --- |
+| `/api/pharmacy/profile` | `GET` | `PHARMACY` | Read the authenticated pharmacy's profile (or `null`) |
+| `/api/pharmacy/profile` | `POST` | `PHARMACY` | Create the profile |
+| `/api/pharmacy/profile` | `PUT` | `PHARMACY` | Update the profile |
+| `/api/pharmacies/:pharmacyId` | `GET` | Public | Approved, active pharmacy details |
+
+Owner endpoints require a bearer token and the `PHARMACY` role. They never
+expose `passwordHash`, tokens, the owning `userId`, or raw Mongo fields. The
+public endpoint intentionally exposes business contact details but only for
+`APPROVED` and active pharmacies; `PENDING`, `REJECTED`, inactive, and unknown
+profiles return `404`.
+
+### Frontend
+
+- `/pharmacy/dashboard` — pharmacy summary, verification state, and quick
+  actions for inventory and the profile.
+- `/pharmacy/profile` — create, view, and edit the profile; verification status
+  is read-only.
+- Pharmacy navigation appears only for `PHARMACY` accounts. Patients and doctors
+  are rejected by the existing `ProtectedRoute` role checks.
+
+### Database indexes
+
+`Pharmacy` keeps the unique `userId` index (one profile per account), a unique
+`licenseNumber` index, and an index on `verificationStatus` for the approved-only
+public lookup.
+
+### Medicine inventory
+
+Medicines belong to the authenticated pharmacy's profile. The owning pharmacy is
+always derived from the JWT; a client-supplied `pharmacyId` is ignored. A pharmacy
+without a profile gets `404 PROFILE_REQUIRED`, and another pharmacy's medicine
+also returns `404` so its existence is not disclosed.
+
+| Field                | Notes |
+| -------------------- | --- |
+| name                 | Required, up to 200 characters |
+| genericName          | Optional, up to 200 characters |
+| brandName            | Optional, up to 200 characters |
+| category             | Required: `TABLET`, `CAPSULE`, `SYRUP`, `INJECTION`, `CREAM`, `OINTMENT`, `DROPS`, `INHALER`, `POWDER`, or `OTHER` |
+| description          | Optional, up to 1000 characters |
+| dosageForm           | Optional, up to 100 characters |
+| strength             | Optional, up to 100 characters |
+| packSize             | Optional, up to 100 characters |
+| price                | Required number from 0 to 1,000,000 with at most 2 decimals |
+| stockQuantity        | Required integer from 0 to 1,000,000 |
+| prescriptionRequired | Boolean, defaults to `true` |
+| expiryDate           | Required `YYYY-MM-DD`; stored at UTC midnight and returned date-only |
+| isActive             | System-managed; changed only through the activate/deactivate endpoints |
+
+Each pharmacy can have only one medicine with the same normalized name,
+strength, and dosage form. Repeating that combination returns
+`409 DUPLICATE_MEDICINE`; the same medicine may exist in another pharmacy.
+
+Inventory management is allowed while the pharmacy is `PENDING` or `APPROVED`.
+A `REJECTED` pharmacy receives `403 PHARMACY_REJECTED` and an inactive pharmacy
+receives `403 PHARMACY_INACTIVE`. Medicines are never hard-deleted. Expired
+medicines stay visible with a computed `isExpired` flag and can be deactivated.
+
+| Endpoint | Method | Role | Purpose |
+| --- | --- | --- | --- |
+| `/api/medicines` | `GET` | `PHARMACY` | List own medicines |
+| `/api/medicines` | `POST` | `PHARMACY` | Add a medicine |
+| `/api/medicines/:medicineId` | `GET` | `PHARMACY` | Read one own medicine |
+| `/api/medicines/:medicineId` | `PUT` | `PHARMACY` | Update an own medicine |
+| `/api/medicines/:medicineId/deactivate` | `PATCH` | `PHARMACY` | Mark inactive |
+| `/api/medicines/:medicineId/activate` | `PATCH` | `PHARMACY` | Mark active |
+
+The list supports `q` (name, generic name, brand), `category`, `isActive`,
+`page`, `limit` (default 20, maximum 50), and a whitelisted `sort`
+(`name`, `price`, `stock`, or `expiry`, each `_asc` or `_desc`). Responses use
+`{ medicines, pagination }` and expose no owner or verification internals.
+
+Frontend routes:
+
+- `/pharmacy/inventory` — searchable, filterable, paginated inventory with
+  expiry warnings and activate/deactivate actions.
+- `/pharmacy/inventory/new` — add a medicine.
+- `/pharmacy/inventory/:medicineId/edit` — edit an own medicine.
+
+The `Medicine` collection keeps a unique compound index on
+`{ pharmacyId, identityKey }` as the duplicate backstop, plus indexes for
+inventory listing and name search.
+
+### Public medicine search
+
+Public medicine discovery is read-only and requires no authentication. A result
+is visible only when the medicine is active and not expired **and** its pharmacy
+profile exists, is `APPROVED`, and is active. Pending, rejected, inactive,
+expired, and orphaned records are hidden; a hidden medicine's detail request
+returns `404` without revealing that it exists privately.
+
+| Endpoint | Method | Auth | Purpose |
+| --- | --- | --- | --- |
+| `/api/public/medicines` | `GET` | Public | Search available medicines |
+| `/api/public/medicines/:medicineId` | `GET` | Public | Read a visible medicine |
+
+The list supports `q` (name, generic name, brand, strength), `category`,
+`pharmacyId`, `minPrice`, `maxPrice`, `prescriptionRequired`, `inStock`, `page`,
+and `limit`. Pagination defaults to 20 with a maximum of 50. Sorting is limited
+to `name_asc`, `name_desc`, `price_asc`, `price_desc`, `expiry_asc`,
+`expiry_desc`, `stock_desc`, and `newest`.
+
+Results include only public medicine fields plus a safe pharmacy summary
+(pharmacy name, pharmacist name, address, city, state, and pincode). Customer
+responses expose `inStock` and the current stock count but never internal
+ownership, duplicate identity, authentication data, or pharmacy verification
+internals. An out-of-stock medicine remains visible unless `inStock=true` is
+requested.
+
+Frontend routes:
+
+- `/medicines` — public search with category, price, prescription, and
+  availability filters, sorting, pagination, and shareable URL state.
+- `/medicines/:medicineId` — public medicine details with the selling pharmacy.
+
+### Pharmacy cart
+
+The cart is available only to authenticated `PATIENT` accounts. The patient is
+always derived from the JWT. A patient has at most one cart per pharmacy, while
+multiple pharmacy carts may coexist; medicines from different pharmacies are
+never combined into one cart.
+
+Every item stores a server-derived snapshot of the medicine name, generic name,
+strength, dosage form, pack size, prescription requirement, and unit price.
+Client-supplied `patientId`, `pharmacyId`, prices, stock, and medicine names are
+ignored. Cart totals use the recorded snapshot, and the response separately
+reports the current price and whether it has changed.
+
+| Endpoint | Method | Role | Purpose |
+| --- | --- | --- | --- |
+| `/api/cart` | `GET` | `PATIENT` | Read all carts and the overall summary |
+| `/api/cart/items` | `POST` | `PATIENT` | Add a quantity to the pharmacy cart |
+| `/api/cart/items/:medicineId` | `PATCH` | `PATIENT` | Set an item quantity |
+| `/api/cart/items/:medicineId` | `DELETE` | `PATIENT` | Remove one item |
+| `/api/cart/:cartId` | `DELETE` | `PATIENT` | Clear a pharmacy cart |
+
+`POST` adds to an existing quantity, while `PATCH` sets the absolute quantity.
+An item cannot exceed 100 units or the medicine's current stock. Adding a
+medicine requires an active, unexpired medicine with stock greater than zero
+from an approved, active pharmacy. Failures use specific conflict codes such as
+`MEDICINE_OUT_OF_STOCK`, `MEDICINE_EXPIRED`, `PHARMACY_UNAVAILABLE`,
+`CART_QUANTITY_EXCEEDS_STOCK`, and `CART_QUANTITY_LIMIT_EXCEEDED`.
+
+`GET /api/cart` returns `{ carts, summary }`. Each item includes the current
+stock, subtotal, snapshot and current price, price-change flag, and an
+availability status: `available`, `lowStock` (5 units or fewer),
+`quantityExceeded`, `outOfStock`, `expired`, `pharmacyUnavailable`, or
+`unavailable`. Removing the last item from a cart leaves an empty record that is
+hidden from reads; clearing a cart deletes it. Empty state is `{ carts: [],
+summary }`, not `404`.
+
+Frontend integration:
+
+- `/cart` — protected patient route with pharmacy-grouped items, quantity
+  controls, availability and price-change notices, per-cart clear actions, and
+  an overall summary.
+- The patient navigation and public header show a cart badge. Add-to-cart
+  controls appear on medicine search and detail pages only for patient accounts.
+- Each pharmacy cart links to checkout and the patient's order history.
+- Online payments, delivery tracking, and notifications are intentionally not
+  implemented in this phase.
+
+The `Cart` collection has a unique compound index on
+`{ patientId, pharmacyId }`. Atomic updates re-check stock and quantity limits
+so concurrent add requests cannot create duplicate rows or exceed availability.
+
+## Pharmacy orders and COD checkout
+
+An authenticated `PATIENT` can turn one pharmacy cart into a Cash on Delivery
+order. Checkout is server-authoritative: the API reloads the cart, pharmacy,
+medicines, stock, prices, and prescriptions. Client-supplied ownership, medicine
+metadata, prices, totals, payment status, and order status are ignored.
+
+### Checkout rules
+
+- The cart must belong to the patient and contain at least one item.
+- The pharmacy must still be `APPROVED` and active.
+- Every medicine must still belong to that pharmacy, be active, be unexpired,
+  and have enough stock for the requested quantity.
+- A changed cart price snapshot is rejected with `409 PRICE_CHANGED`; checkout
+  never silently charges a different price.
+- Quantities must be whole numbers from 1 to 100 and cannot exceed current
+  stock.
+- Each prescription-required medicine needs a `prescriptionSelections` entry.
+  The prescription must belong to the patient, be `ACTIVE`, and contain a
+  normalized exact match on the medicine name or generic name.
+- Only `COD` is accepted. New orders use `paymentStatus: PENDING`,
+  `orderStatus: PLACED`, `deliveryFee: 0`, and `prescriptionStatus: VERIFIED`
+  or `NOT_REQUIRED`. Online payments are not exposed; pharmacy order status
+  management is described below.
+- The server recalculates the subtotal and total from validated snapshots.
+- The source cart is deleted after a successful order, so ordered items cannot
+  be submitted again.
+
+Checkout failures use specific `409` codes: `CART_EMPTY`,
+`PHARMACY_UNAVAILABLE`, `MEDICINE_NOT_FOUND`, `MEDICINE_UNAVAILABLE`,
+`MEDICINE_EXPIRED`, `PRICE_CHANGED`, `INSUFFICIENT_STOCK`,
+`PRESCRIPTION_REQUIRED`, `INVALID_PRESCRIPTION`, and `CHECKOUT_CONFLICT`.
+Malformed input returns `400 VALIDATION_ERROR`; unauthenticated requests return
+`401`, and wrong roles return `403`.
+
+### API endpoints
+
+| Endpoint | Method | Role | Purpose |
+| --- | --- | --- | --- |
+| `/api/orders/checkout` | `POST` | `PATIENT` | Create one COD order from a pharmacy cart |
+| `/api/orders` | `GET` | `PATIENT` | List the authenticated patient's orders |
+| `/api/orders/:orderId` | `GET` | `PATIENT` | Read one owned order |
+
+Checkout request:
+
+```json
+{
+  "cartId": "661f2f5c9d1a1a1a1a1a1a1a",
+  "deliveryAddress": {
+    "fullName": "John Doe",
+    "phone": "9876543210",
+    "addressLine1": "12 Example Street",
+    "addressLine2": "Near City Market",
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "pincode": "560001",
+    "landmark": "Opposite the park"
+  },
+  "paymentMethod": "COD",
+  "prescriptionSelections": [
+    {
+      "medicineId": "661f2f5c9d1a1a1a1a1a1a1b",
+      "prescriptionId": "661f2f5c9d1a1a1a1a1a1a1c"
+    }
+  ]
+}
+```
+
+`fullName`, `phone`, `addressLine1`, `city`, `state`, and a valid 6-digit Indian
+`pincode` are required. `addressLine2` and `landmark` are optional.
+
+An optional `Idempotency-Key` header, up to 128 characters after trimming,
+makes retries safe. Keys are scoped to the patient; a replay returns `200` with
+the existing order, while a new order returns `201`. A hidden unique
+`sourceCartId` index is the database backstop against double submission even
+without a key.
+
+Order history accepts `status`, `page`, `limit` (default 10, maximum 50), and
+`sort` (`newest`, `oldest`, `total_asc`, or `total_desc`). `GET /api/orders`
+returns `{ orders, pagination }`, and all reads are scoped to the authenticated
+patient. Unknown or another patient's order returns `404 ORDER_NOT_FOUND`.
+
+Responses contain safe medicine and pharmacy snapshots plus the delivery
+address, totals, payment method/status, order status, prescription status, and
+placed date. They never expose `patientId`, `sourceCartId`, the idempotency key,
+pharmacy license details, authentication data, or raw Mongo internals.
+
+### Stock consistency
+
+Because local development may run MongoDB as a standalone server without
+transactions, stock is reserved with conditional atomic decrements that require
+the medicine to still be active, current, and sufficiently stocked. If a later
+line or the order insert fails, already-reserved quantities are compensated
+(restored). Concurrent checkouts therefore cannot oversell stock, and the unique
+order indexes resolve duplicate requests to one stored order.
+
+### Frontend
+
+- `/checkout/:cartId` — protected patient checkout with delivery address,
+  prefilled account name/phone, prescription selection, COD summary, validation,
+  double-submit protection, and idempotent retries.
+- `/orders/:orderId/success` — order confirmation with safe fetch fallback.
+- `/orders` — order history with status filtering, sorting, pagination, and
+  empty/error states.
+- `/orders/:orderId` — owned order details with medicines, prescription links,
+  delivery address, pharmacy, payment, statuses, and totals.
+- `/cart` exposes a checkout action per pharmacy and explains blocked checkout
+  conditions. `My Orders` appears in patient navigation and dashboard actions.
+
+### Database indexes
+
+`Order` adds:
+
+- `{ sourceCartId: 1 }` — unique; one cart can produce at most one order.
+- `{ patientId: 1, idempotencyKey: 1 }` — unique partial index for non-null keys.
+- `{ patientId: 1, placedAt: -1, _id: -1 }` — newest-first patient history.
+- `{ patientId: 1, orderStatus: 1, placedAt: -1 }` — status-filtered history.
+
+## Pharmacy order management
+
+An authenticated `PHARMACY` account can review and fulfil orders belonging to
+its own pharmacy. The API resolves the pharmacy from the JWT user and never
+accepts a client-supplied pharmacy identifier or ownership field.
+
+### Profile eligibility and isolation
+
+- A pharmacy profile must exist, be `APPROVED`, and be active.
+- A missing profile returns `404 PROFILE_REQUIRED`.
+- `PENDING` profiles return `403 PHARMACY_NOT_APPROVED`; `REJECTED` profiles
+  return `403 PHARMACY_REJECTED`; inactive profiles return
+  `403 PHARMACY_INACTIVE`.
+- Every list, detail, summary, and status query is scoped to the authenticated
+  pharmacy. Another pharmacy's order returns `404 ORDER_NOT_FOUND` without
+  revealing whether it exists.
+- Verification remains platform-controlled; pharmacies cannot approve
+  themselves.
+
+### API endpoints
+
+| Endpoint | Method | Role | Purpose |
+| --- | --- | --- | --- |
+| `/api/pharmacy/orders` | `GET` | `PHARMACY` | List pharmacy-owned orders |
+| `/api/pharmacy/orders/summary` | `GET` | `PHARMACY` | Return dashboard status counts |
+| `/api/pharmacy/orders/:orderId` | `GET` | `PHARMACY` | Read one owned order |
+| `/api/pharmacy/orders/:orderId/status` | `PATCH` | `PHARMACY` | Move an owned order to the next valid status |
+
+Order list query parameters:
+
+- `q` — searches case-insensitively by complete order ID, delivery customer
+  name, medicine name, generic name, or brand name. Maximum 100 characters.
+- `status` — one of the supported order statuses.
+- `page` — positive integer, default `1`.
+- `limit` — positive integer, default `20`, maximum `50`.
+- `sort` — `newest`, `oldest`, `total_asc`, or `total_desc`.
+
+The list returns `{ orders, pagination }`. The summary returns
+`{ placed, confirmed, processing, ready, outForDelivery, delivered, cancelled }`,
+all counted only for the authenticated pharmacy.
+
+Status updates accept exactly one field:
+
+```json
+{
+  "status": "CONFIRMED"
+}
+```
+
+Unexpected fields such as `paymentStatus`, `totalAmount`, `items`,
+`deliveryAddress`, `pharmacyId`, or `orderStatus` are rejected with
+`400 VALIDATION_ERROR`.
+
+### Status transition rules
+
+| Current status | Allowed next statuses |
+| --- | --- |
+| `PLACED` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | `PROCESSING`, `CANCELLED` |
+| `PROCESSING` | `READY` |
+| `READY` | `OUT_FOR_DELIVERY` |
+| `OUT_FOR_DELIVERY` | `DELIVERED` |
+| `DELIVERED` | Terminal |
+| `CANCELLED` | Terminal |
+
+Any other transition, including setting the same status again, returns
+`409 INVALID_STATUS_TRANSITION` with the current status, requested status, and
+allowed next statuses. Updates use an atomic status check so concurrent requests
+cannot apply two conflicting transitions.
+
+Status changes update only `orderStatus`. They do not deduct or restore stock,
+change totals or item snapshots, edit the delivery address, or modify
+`paymentStatus`. A delivered COD order therefore remains `PENDING`; no payment
+capture or refund is implemented.
+
+### Privacy
+
+Pharmacy order responses contain order details, item snapshots, delivery
+information, prescription status, and pricing. Customer information is limited
+to the delivery `fullName` and `phone`. Responses never expose patient account
+email, password hashes, JWTs, internal user IDs, medical records, appointments,
+consultation notes, diagnoses, chat messages, unrelated prescriptions,
+`sourceCartId`, `idempotencyKey`, pharmacy verification internals, or raw Mongo
+fields.
+
+### Frontend
+
+- `/pharmacy/orders` — responsive search, status filtering, sorting, pagination,
+  desktop table, mobile cards, and loading/empty/error states.
+- `/pharmacy/orders/:orderId` — items, customer, delivery address, payment,
+  totals, available status actions, and confirmation dialogs. Cancellation has
+  a stronger warning that no refund is processed.
+- `/pharmacy/dashboard` — real pharmacy-scoped counts for New Orders, Confirmed,
+  Processing, Ready, Out for Delivery, Delivered, and Cancelled, with links into
+  filtered order views.
+- Pharmacy navigation is Dashboard, Orders, Inventory, and Profile. Patient-only
+  navigation is never shown to pharmacy accounts, and patients cannot access
+  pharmacy order routes.
+
+### Database indexes
+
+`Order` adds:
+
+- `{ pharmacyId: 1, placedAt: -1, _id: -1 }` — newest-first pharmacy order list.
+- `{ pharmacyId: 1, orderStatus: 1, placedAt: -1 }` — filtered pharmacy orders
+  and summary status grouping.
+
+### Explicit limitations
+
+Pharmacy order management does not implement delivery or courier tracking,
+notifications, email/SMS, online payments, refunds, admin order management,
+customer ratings, pharmacy-patient chat, multiple pharmacies per order,
+prescription approval beyond the Phase 13.5 verification workflow, AI features,
+or Phase 13.9+ functionality.
+
+## Phase 13.7 — Patient Order Status & Tracking
+
+Tracking currently means order-status tracking only.
+
+An authenticated `PATIENT` can view a read-only status timeline for an owned order on
+`/orders/:orderId`. The timeline is rendered from real `statusHistory` data returned by
+the existing patient and pharmacy order APIs. The `Order` document remains the source of
+truth; no tracking, courier, ETA, GPS, live location, map, Socket.IO, notification, or
+Phase 13.9+ functionality is implemented.
+
+### Data model
+
+`Order.statusHistory` is an embedded array of `{ status, timestamp }` entries:
+
+- Entries use `_id: false`.
+- `status` is constrained to the order status enum.
+- `timestamp` is required.
+- The default is an empty array.
+- No `changedByRole` field, separate history collection, or `statusHistory` index is
+  added.
+- New checkout creates exactly one `PLACED` entry with the same timestamp as `placedAt`.
+- Legacy orders without history serialize as `statusHistory: []`. The UI shows the current
+  status badge and `Detailed status history is not available for this order.` It does not
+  invent historical transitions.
+- Malformed legacy entries are filtered safely by the serializer and never crash the API.
+
+### Lifecycle
+
+The status lifecycle is unchanged from Phase 13.6:
+
+`PLACED -> CONFIRMED -> PROCESSING -> READY -> OUT_FOR_DELIVERY -> DELIVERED`
+
+Cancellation path:
+
+`PLACED -> CANCELLED`
+
+Only authorized pharmacy transitions may append history. Patients are read-only and cannot
+modify order status or history. Client-supplied `statusHistory`, `orderStatus`, `patientId`,
+or `pharmacyId` values are ignored.
+
+### API
+
+No new endpoint is added. Existing endpoints return `statusHistory`:
+
+| Endpoint | Method | Role | Purpose |
+| --- | --- | --- | --- |
+| `/api/orders/:orderId` | `GET` | `PATIENT` | Read one owned order, including status history |
+| `/api/pharmacy/orders/:orderId` | `GET` | `PHARMACY` | Read one owned order, including status history |
+
+Pharmacy status updates append one entry atomically with the status change. The response
+contains only `status` and ISO timestamp values; it never exposes account internals,
+tokens, passwords, user IDs, or raw Mongo fields.
+
+### Atomic transition behavior
+
+`PATCH /api/pharmacy/orders/:orderId/status` first validates the transition, then performs
+one conditional `findOneAndUpdate` with `$set: { orderStatus }` and `$push: { statusHistory }`.
+Concurrent conflicting updates resolve to one successful transition and one `409` response.
+Invalid or repeated transitions append no history entry.
+
+Status updates remain limited to `orderStatus`. They do not deduct or restore stock, change
+totals or item snapshots, edit the delivery address, or modify `paymentStatus`.
+
+### Frontend
+
+- `/orders/:orderId` shows an `Order status` section near the top of the page.
+- `OrderStatusTimeline` renders `Completed`, `Current`, and `Pending` text states with
+  accessible markers and timestamps.
+- A delivered order marks every lifecycle step as completed.
+- A cancelled order renders only `PLACED` and `CANCELLED`, followed by `Order cancelled`.
+- Legacy or incomplete history uses the safe fallback instead of fabricated dates.
+- `My Orders` continues to show status, date, total, pharmacy, and a detail link.
+- The patient dashboard does not add fake order statistics.
+
+### Privacy and security
+
+- Patients can read only their own order history and status history.
+- Patients cannot modify status or history through any route.
+- Pharmacies can read and transition only their own orders.
+- History entries contain only `status` and `timestamp`.
+- Status updates do not expose or alter stock, payment, totals, items, or delivery data.
+- No GPS, ETA, maps, courier, driver, live location, Socket.IO, notifications, or
+  later-phase tracking behavior is implemented.
+
+### Explicit limitations
+
+Phase 13.7 does not implement delivery/courier tracking, ETAs, maps, live location,
+real-time status updates, notifications, email/SMS, refunds, online payments, admin order
+management, customer ratings, pharmacy-patient chat, multiple pharmacies per order, or
+Phase 13.9+ functionality.
+
+### Database indexes
+
+No new index is added for `statusHistory`. Existing `Order` indexes remain unchanged.
+
+## Phase 13.8 — COD / Payment Foundation
+
+Cash on Delivery is the only supported payment method. Online payment is not implemented in the current college-project version.
+
+### Server behavior
+
+- `PAYMENT_METHODS` contains only `COD`; `DEMO` and all online methods are rejected.
+- Supported payment statuses are `PENDING`, `PAID`, `FAILED`, and `CANCELLED`.
+  New orders always start at `PENDING`.
+- Checkout accepts `COD` case-insensitively, trims surrounding whitespace, and
+  normalizes it to `COD`. A missing, `null`, or empty method defaults to `COD`.
+  Non-string and unsupported values return `400 VALIDATION_ERROR` with a
+  `paymentMethod` detail.
+- Client-supplied `paymentStatus`, totals, fees, item snapshots, stock, and
+  timestamps are ignored. The server reloads the cart, medicine prices, stock,
+  and prescriptions before creating an order.
+- No endpoint can mark an order as paid. Pharmacy status updates accept only
+  `status` and reject `paymentStatus`; patient order routes are read-only.
+- COD orders remain `PENDING` through `DELIVERED` and `CANCELLED`. No payment
+  capture, refund, gateway callback, or fake payment-success flow exists.
+- Legacy orders with missing or unsupported payment values are serialized as
+  `null` rather than exposing raw database values. The UI displays a safe
+  fallback.
+
+### Frontend
+
+- Checkout shows a Cash on Delivery card, the pending payment status, and
+  “Online payment is not currently available.” No card, UPI, or wallet fields
+  are rendered or submitted.
+- The success page states that the order was placed and payment will be
+  collected on delivery. It never claims that payment succeeded.
+- Order details show Payment method, Payment status, Amount, and prescription
+  status in a section separate from order-status tracking.
+- My Orders and pharmacy order views show a compact payment-status badge.
+- `PaymentStatusBadge` is presentation-only and cannot change payment state.
+
+### Explicit limitations
+
+Phase 13.8 does not implement online payments, payment gateways, webhooks,
+payment verification, refunds, COD collection confirmation, admin finance
+tools, or Phase 13.9/13.10 functionality. No card number, CVV, UPI ID, or
+gateway secret is stored or logged.
+
+### Database indexes
+
+No index is added for `paymentStatus`. Existing `Order` indexes remain unchanged.
+
+## Phase 13.9 — Notifications
+
+Notifications are currently in-app only. Email, SMS, browser push, and external notification providers are not implemented.
+
+Order notifications are generated only after successful order creation or successful order-status transitions.
+
+### Server behavior
+
+- `Notification` records store `userId`, `type`, `title`, `message`,
+  `referenceId`, `referenceType`, `eventKey`, `isRead`, and timestamps.
+- Supported types are `ORDER_PLACED`, `ORDER_CONFIRMED`, `ORDER_PROCESSING`,
+  `ORDER_READY`, `ORDER_OUT_FOR_DELIVERY`, `ORDER_DELIVERED`,
+  `ORDER_CANCELLED`, and `NEW_ORDER`.
+- Checkout creates `ORDER_PLACED` for the patient and `NEW_ORDER` for the
+  pharmacy owner only after the order has been created successfully.
+- A successful pharmacy status transition creates the matching patient
+  notification. Invalid or repeated transitions and failed checkouts create no
+  notification.
+- Event keys such as `ORDER_PLACED:<orderId>` and
+  `NEW_ORDER:<orderId>` prevent duplicate notifications on retries.
+- Notification serializers expose only `id`, `type`, `title`, `message`,
+  `referenceId`, `referenceType`, `isRead`, and `createdAt`.
+
+### API
+
+- `GET /api/notifications` supports `page`, `limit` (default 20, maximum 50),
+  and `unreadOnly`, and returns `notifications`, `pagination`, and
+  `unreadCount`.
+- `GET /api/notifications/unread-count` returns the authenticated user's
+  unread count.
+- `PATCH /api/notifications/:notificationId/read` marks one notification as
+  read and returns the updated notification and unread count.
+- `PATCH /api/notifications/read-all` marks all of the authenticated user's
+  notifications as read.
+- All notification endpoints require authentication. One user cannot read or
+  mark another user's notifications.
+
+### Real-time delivery
+
+- The existing authenticated Socket.IO server adds each user to the private
+  room `notifications:<userId>`.
+- Newly persisted notifications are emitted as `notification:new` with the
+  safe notification payload.
+- Delivery is best-effort; persistence remains the source of truth and
+  notifications remain available through the API when a socket is unavailable.
+- Existing chat, video, and audio socket rooms and events are unchanged.
+
+### Frontend
+
+- A notification bell in authenticated navigation shows the unread badge,
+  recent notifications, and a link to the notifications page.
+- `/notifications` lists all notifications with unread-only filtering,
+  pagination, per-notification mark-as-read, and mark-all-as-read.
+- Authenticated patient, doctor, pharmacy, and fallback/admin navigation
+  includes a Notifications link. Opening a notification marks it as read and
+  routes patient or pharmacy users to the related order.
+- Notification state and the shared socket connection are cleared when the
+  user signs out or switches accounts.
+
+### Database indexes
+
+- `{ userId: 1, createdAt: -1 }`
+- `{ userId: 1, isRead: 1, createdAt: -1 }`
+- `{ userId: 1, eventKey: 1 }` (unique)
+
+### Explicit limitations
+
+Phase 13.9 does not implement email, SMS, browser push, Firebase, OneSignal,
+external notification providers, admin notification management, user
+notification preferences, marketing notifications, or bulk notifications.
+Notifications cannot be deleted and no Phase 13.10 functionality is included.
+
 ## Running the backend tests
 
 ```bash
@@ -1100,8 +1751,10 @@ npm test
 Tests run against a dedicated database (`mediconnect_test`) and cover
 registration, login, JWT validation, role authorization, the patient, doctor,
 doctor discovery, appointment, real-time chat (REST and Socket.IO), consultation
-type enforcement, prescription, and medical records modules, plus regression
-checks.
+type enforcement, prescription, medical records, pharmacy profile, medicine
+inventory, public medicine discovery, pharmacy cart, COD order creation, pharmacy
+order management, patient order status history, COD payment foundation, in-app
+notifications (REST and Socket.IO), plus regression checks.
 
 ## Documentation
 

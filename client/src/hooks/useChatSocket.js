@@ -18,8 +18,8 @@ function emitWithAck(socket, event, payload) {
 }
 
 // Connects to the shared Socket.IO server while the hook is enabled, forwards
-// incoming chat events to the latest callbacks, and disconnects on logout or
-// unmount so no duplicate connections are left behind.
+// incoming chat events to the latest callbacks, and removes its listeners on
+// unmount while the shared connection remains available to other features.
 export function useChatSocket({ enabled = false, onMessage, onMessagesRead } = {}) {
   const { user } = useAuth()
   const [connectionState, setConnectionState] = useState('idle')
@@ -93,7 +93,6 @@ export function useChatSocket({ enabled = false, onMessage, onMessagesRead } = {
       socket.off('connect_error', handleConnectError)
       socket.off('chat:message', handleMessage)
       socket.off('chat:messagesRead', handleMessagesRead)
-      disconnectSocket()
     }
   }, [enabled, userId])
 

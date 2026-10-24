@@ -28,11 +28,23 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-3">
           <span className="text-lg font-semibold tracking-tight text-slate-900">
             MediConnect
           </span>
-          <nav className="flex items-center gap-3">
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Link
+              to="/doctors"
+              className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+            >
+              Find a Doctor
+            </Link>
+            <Link
+              to="/medicines"
+              className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+            >
+              Medicines
+            </Link>
             <Link
               to="/login"
               className="text-sm font-medium text-slate-600 transition hover:text-slate-900"

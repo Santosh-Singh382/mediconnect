@@ -8,14 +8,14 @@ import { getPatientDashboard } from '../lib/patientApi.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
 import { homePathFor, homeLinksFor } from '../lib/homePath.js'
 
-const COMING_SOON_LABEL = 'Coming in a later module'
-
 const QUICK_ACTIONS = [
   { title: 'Find a Doctor', to: '/doctors' },
   { title: 'Appointments', to: '/appointments' },
+  { title: 'My Orders', to: '/orders' },
   { title: 'Prescriptions', to: '/prescriptions' },
   { title: 'Medical Records', to: '/medical-records' },
-  { title: 'Pharmacy' },
+  { title: 'Pharmacy', to: '/medicines' },
+  { title: 'My Cart', to: '/cart' },
 ]
 
 const PROFILE_LABELS = [
@@ -209,24 +209,14 @@ export default function PatientDashboardPage() {
                 <h3 className="text-base font-medium text-slate-900">
                   {action.title}
                 </h3>
-                {action.to ? (
-                  <div className="mt-3">
-                    <Link
-                      to={action.to}
-                      className="inline-block rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-700"
-                    >
-                      Open
-                    </Link>
-                  </div>
-                ) : (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">
-                    <span
-                      className="inline-block h-1.5 w-1.5 rounded-full bg-slate-300"
-                      aria-hidden="true"
-                    />
-                    {COMING_SOON_LABEL}
-                  </p>
-                )}
+                <div className="mt-3">
+                  <Link
+                    to={action.to}
+                    className="inline-block rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-700"
+                  >
+                    Open
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
