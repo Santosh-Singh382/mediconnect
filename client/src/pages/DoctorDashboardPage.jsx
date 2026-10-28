@@ -7,6 +7,7 @@ import ErrorState from '../components/ErrorState.jsx'
 import { getDoctorDashboard } from '../lib/doctorApi.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
 import { homePathFor, homeLinksFor } from '../lib/homePath.js'
+import DashboardSidebar from '../components/DashboardSidebar.jsx'
 
 const COMING_SOON_LABEL = 'Coming in a later module'
 
@@ -71,7 +72,7 @@ export default function DoctorDashboardPage() {
   if (state.loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
+        <AppHeader home={homePathFor(user)} links={[]} />
         <main className="mx-auto max-w-5xl px-6 py-12">
           <LoadingState label="Loading your dashboard…" />
         </main>
@@ -82,7 +83,7 @@ export default function DoctorDashboardPage() {
   if (state.error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
+        <AppHeader home={homePathFor(user)} links={[]} />
         <main className="mx-auto max-w-5xl px-6 py-12">
           <ErrorState message={state.error} onRetry={retry} />
         </main>
@@ -96,25 +97,31 @@ export default function DoctorDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
+      <AppHeader home={homePathFor(user)} links={[]} />
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <section className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:pl-[308px] lg:pr-8 lg:py-12">
+        <DashboardSidebar links={homeLinksFor(user)} role="Doctor" />
+        <main className="min-w-0">
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-xl sm:px-10">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-600/30 blur-3xl" aria-hidden="true" />
+          <div className="relative flex flex-wrap items-end justify-between gap-5">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-300">Doctor workspace</p>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight">
               Welcome back, {firstName}
             </h1>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-300">
               Manage your practice profile and upcoming doctor services.
             </p>
           </div>
           {profile ? (
             <VerificationBadge status={verificationStatus} />
           ) : null}
+          </div>
         </section>
 
         <section className="mt-8 grid gap-6 lg:grid-cols-3">
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
             <div className="flex items-baseline justify-between">
               <h2 className="text-base font-semibold text-slate-900">
                 Profile completion
@@ -151,7 +158,7 @@ export default function DoctorDashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-slate-900">
               Account
             </h2>
@@ -185,7 +192,7 @@ export default function DoctorDashboardPage() {
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-3">
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
             <p className="text-sm text-slate-500">Upcoming appointments</p>
             <p className="mt-1 text-3xl font-semibold text-slate-900">
               {stats.upcomingAppointments}
@@ -194,7 +201,7 @@ export default function DoctorDashboardPage() {
               {COMING_SOON_LABEL}
             </p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
             <p className="text-sm text-slate-500">Completed consultations</p>
             <p className="mt-1 text-3xl font-semibold text-slate-900">
               {stats.completedConsultations}
@@ -203,7 +210,7 @@ export default function DoctorDashboardPage() {
               {COMING_SOON_LABEL}
             </p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
             <p className="text-sm text-slate-500">Prescriptions created</p>
             <p className="mt-1 text-3xl font-semibold text-slate-900">
               {stats.prescriptionsCreated}
@@ -314,7 +321,8 @@ export default function DoctorDashboardPage() {
             ))}
           </div>
         </section>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

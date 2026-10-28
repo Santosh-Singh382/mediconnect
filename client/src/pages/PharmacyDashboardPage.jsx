@@ -9,6 +9,7 @@ import { getPharmacyOrderSummary } from '../lib/orderApi.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
 import { PHARMACY_ORDER_SUMMARY_CARDS } from '../lib/orderFormat.js'
 import { homePathFor, homeLinksFor } from '../lib/homePath.js'
+import DashboardSidebar from '../components/DashboardSidebar.jsx'
 
 const QUICK_ACTIONS = [
   {
@@ -128,7 +129,7 @@ export default function PharmacyDashboardPage() {
   if (state.loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
+        <AppHeader home={homePathFor(user)} links={[]} />
         <main className="mx-auto max-w-5xl px-6 py-12">
           <LoadingState label="Loading your dashboard…" />
         </main>
@@ -139,7 +140,7 @@ export default function PharmacyDashboardPage() {
   if (state.error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
+        <AppHeader home={homePathFor(user)} links={[]} />
         <main className="mx-auto max-w-5xl px-6 py-12">
           <ErrorState message={state.error} onRetry={retry} />
         </main>
@@ -153,25 +154,31 @@ export default function PharmacyDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
+      <AppHeader home={homePathFor(user)} links={[]} />
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <section className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:pl-[308px] lg:pr-8 lg:py-12">
+        <DashboardSidebar links={homeLinksFor(user)} role="Pharmacy" />
+        <main className="min-w-0">
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-xl sm:px-10">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-emerald-600/30 blur-3xl" aria-hidden="true" />
+          <div className="relative flex flex-wrap items-end justify-between gap-5">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-emerald-300">Pharmacy workspace</p>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight">
               Welcome back, {firstName}
             </h1>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-300">
               Manage orders, inventory, and your pharmacy profile.
             </p>
           </div>
           {profile ? (
             <VerificationBadge status={profile.verificationStatus} />
           ) : null}
+          </div>
         </section>
 
         {!profile ? (
-          <section className="mt-8 rounded-lg border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
             <h2 className="text-base font-semibold text-slate-900">
               Set up your pharmacy profile
             </h2>
@@ -189,7 +196,7 @@ export default function PharmacyDashboardPage() {
         ) : (
           <>
             <section className="mt-8 grid gap-6 lg:grid-cols-3">
-              <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-base font-semibold text-slate-900">
@@ -252,7 +259,7 @@ export default function PharmacyDashboardPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 className="text-base font-semibold text-slate-900">
                   Verification
                 </h2>
@@ -383,7 +390,8 @@ export default function PharmacyDashboardPage() {
             ))}
           </div>
         </section>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

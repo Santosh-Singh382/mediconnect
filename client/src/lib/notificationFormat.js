@@ -37,6 +37,9 @@ export function notificationOrderPath(notification, role) {
     return null
   }
 
+  if (role === 'ADMIN') {
+    return `/admin/orders/${notification.referenceId}`
+  }
   if (role === 'PHARMACY') {
     return `/pharmacy/orders/${notification.referenceId}`
   }

@@ -134,10 +134,10 @@ export default function OrderStatusTimeline({ status, statusHistory = [] }) {
     return (
       <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
         <OrderStatusBadge status={status} />
-        <p className="mt-3 text-sm font-medium text-slate-900">
+        <p className="mb-0 mt-3 text-sm font-medium text-slate-900">
           Current status: {orderStatusLabel(status)}
         </p>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mb-0 mt-1 text-sm text-slate-600">
           Detailed status history is not available for this order.
         </p>
       </div>
@@ -180,12 +180,12 @@ export default function OrderStatusTimeline({ status, statusHistory = [] }) {
 
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <h3 className="text-sm font-semibold text-slate-900">
+                  <h3 className="mb-0 text-sm font-semibold text-slate-900">
                     {orderStatusLabel(step)}
                   </h3>
                   <StateLabel state={state} />
                 </div>
-                <p className="mt-0.5 text-sm text-slate-600">
+                <p className="mb-0 mt-0.5 text-sm text-slate-600">
                   {ORDER_STATUS_DESCRIPTIONS[step]}
                 </p>
                 {timestamp ? (
@@ -203,7 +203,7 @@ export default function OrderStatusTimeline({ status, statusHistory = [] }) {
       </ol>
 
       {cancelled ? (
-        <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+        <p className="mb-0 mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
           Order cancelled
         </p>
       ) : null}

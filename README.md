@@ -1741,6 +1741,35 @@ external notification providers, admin notification management, user
 notification preferences, marketing notifications, or bulk notifications.
 Notifications cannot be deleted and no Phase 13.10 functionality is included.
 
+## Phase 13.10 — Admin Verification & Management
+
+### Overview
+Admin verification and management UI for approving/rejecting doctors, pharmacies, and users. Includes admin dashboard, medicine/orders/user lists, and verification action modals.
+
+### UI components introduced
+- Admin layout with protected routes (`roles={['ADMIN']}`)
+- Admin pages: Medicines, Orders, Order Details, Users, Doctors, Pharmacies
+- Shared component library: Button, Input, Card, StatCard, Select, Textarea, Badge, StatusBadge, Table, Pagination, Modal, Dropdown, Alert, EmptyState, ErrorState, LoadingState, Avatar, PageHeader, SectionHeader
+- Notification format updates for DOCTOR_APPROVED, DOCTOR_REJECTED, PHARMACY_APPROVED, PHARMACY_REJECTED
+
+### Admin backend (unchanged)
+- `server/src/services/admin.service.js`, `admin.controller.js`, `admin.routes.js` — existing APIs preserved
+- Admin test suite: 21/21 passing
+- Full backend test suite: 926/926 passing
+
+### Limitations
+- No backend API changes; admin pages consume existing admin endpoints
+- No new authentication flows; admin access requires `ADMIN` role via `ProtectedRoute`
+- Verification status transitions remain platform‑controlled; admins can view and trigger actions but server-side approval logic is unchanged
+- No order‑payment integration, no delivery/courier tracking, no email/SMS notifications beyond in‑app
+- Front‑end only; no database schema changes, no new MongoDB collections or indexes
+- No admin‑user creation or password reset flows
+- No role‑based data‑scoping beyond what existing APIs provide
+
+### E2E verification
+- Phase 13.10 script (`phase13.10‑e2e.cjs`): 31/31 checks pass
+- Phase 13.5‑13.9 regression suite: all checks pass
+
 ## Running the backend tests
 
 ```bash

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import AppHeader from '../components/AppHeader.jsx'
+import WorkspaceShell from '../components/WorkspaceShell.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import OrderStatusBadge from '../components/OrderStatusBadge.jsx'
@@ -17,7 +17,6 @@ import {
 } from '../lib/orderFormat.js'
 import { formatMedicinePrice } from '../lib/medicineFormat.js'
 import { inputClass } from '../lib/formStyles.js'
-import { homePathFor, homeLinksFor } from '../lib/homePath.js'
 
 const PAGE_LIMIT = 20
 
@@ -136,17 +135,17 @@ export default function PharmacyOrdersPage() {
   const totalPages = pagination?.totalPages || 0
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-        <section>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-            Orders
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Search, review, and update orders placed with your pharmacy.
-          </p>
+    <WorkspaceShell user={user} contentClassName="max-w-6xl">
+      <div className="py-2 lg:py-4">
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-xl sm:px-10">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-emerald-600/25 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Pharmacy operations</p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Orders</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
+              Search, review, and update orders placed with your pharmacy.
+            </p>
+          </div>
         </section>
 
         {state.accessCode ? (
@@ -157,7 +156,7 @@ export default function PharmacyOrdersPage() {
           <>
             <form
               onSubmit={handleApply}
-              className="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+              className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5"
             >
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="sm:col-span-2">
@@ -236,7 +235,7 @@ export default function PharmacyOrdersPage() {
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <button
                   type="submit"
-                  className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+                  className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-brand-700"
                 >
                   Apply filters
                 </button>
@@ -244,7 +243,7 @@ export default function PharmacyOrdersPage() {
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
                   >
                     Clear filters
                   </button>
@@ -261,7 +260,7 @@ export default function PharmacyOrdersPage() {
                 <ErrorState message={state.error} onRetry={retry} />
               </div>
             ) : orders.length === 0 ? (
-              <div className="mt-8 rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-10">
+              <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-10">
                 <h2 className="text-base font-semibold text-slate-900">
                   {searchParams.get('q')
                     ? 'No orders match your search.'
@@ -288,7 +287,7 @@ export default function PharmacyOrdersPage() {
                   {total} {total === 1 ? 'order' : 'orders'} found
                 </p>
 
-                <div className="mt-3 hidden overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm lg:block">
+                <div className="mt-3 hidden overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:block">
                   <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
                     <thead className="bg-slate-50">
                       <tr>
@@ -351,7 +350,7 @@ export default function PharmacyOrdersPage() {
                             <Link
                               to={`/pharmacy/orders/${order.orderId}`}
                               aria-label={`View order ${order.orderId}`}
-                              className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-700"
+                              className="rounded-xl bg-brand-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-brand-700"
                             >
                               View
                             </Link>
@@ -366,7 +365,7 @@ export default function PharmacyOrdersPage() {
                   {orders.map((order) => (
                     <article
                       key={order.orderId}
-                      className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+                      className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg sm:p-5"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -452,7 +451,7 @@ export default function PharmacyOrdersPage() {
             )}
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </WorkspaceShell>
   )
 }

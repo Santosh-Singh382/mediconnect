@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
-import AppHeader from '../components/AppHeader.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import {
@@ -10,7 +9,7 @@ import {
 } from '../lib/pharmacyApi.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
 import { inputClass } from '../lib/formStyles.js'
-import { homePathFor, homeLinksFor } from '../lib/homePath.js'
+import ProfileShell from '../components/ProfileShell.jsx'
 
 const PINCODE_PATTERN = /^[1-9][0-9]{5}$/
 const PHONE_PATTERN = /^\+?[0-9\s()-]{7,20}$/
@@ -65,7 +64,7 @@ function draftFrom(profile, user) {
 
 function Card({ title, children, action }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
         <h2 className="text-base font-semibold text-slate-900">{title}</h2>
         {action}
@@ -253,23 +252,21 @@ export default function PharmacyProfilePage() {
 
   if (loadState.loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-        <main className="mx-auto max-w-3xl px-6 py-12">
+      <ProfileShell user={user} role="Pharmacy">
+        <div className="py-6">
           <LoadingState label="Loading your pharmacy profile…" />
-        </main>
-      </div>
+        </div>
+      </ProfileShell>
     )
   }
 
   if (loadState.error) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-        <main className="mx-auto max-w-3xl px-6 py-12">
+      <ProfileShell user={user} role="Pharmacy">
+        <div className="py-6">
           <ErrorState message={loadState.error} onRetry={retry} />
-        </main>
-      </div>
+        </div>
+      </ProfileShell>
     )
   }
 
@@ -277,18 +274,19 @@ export default function PharmacyProfilePage() {
   const hasProfile = profile !== null
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-
-      <main className="mx-auto max-w-3xl px-6 py-10">
+    <ProfileShell user={user} role="Pharmacy">
+      <div className="min-w-0 py-2 lg:py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">
+            <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Pharmacy identity</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
               My pharmacy profile
             </h1>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-600">
               These details identify your pharmacy across MediConnect.
             </p>
+            </div>
           </div>
           {profile ? (
             <VerificationBadge status={profile.verificationStatus} />
@@ -621,7 +619,7 @@ export default function PharmacyProfilePage() {
             </Card>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </ProfileShell>
   )
 }

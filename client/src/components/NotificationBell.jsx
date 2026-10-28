@@ -73,6 +73,9 @@ export default function NotificationBell() {
     }
   }
 
+  const notificationsPath =
+    user?.role === 'ADMIN' ? '/admin/notifications' : '/notifications'
+
   return (
     <div ref={containerRef} className="relative">
       <button
@@ -112,10 +115,10 @@ export default function NotificationBell() {
         <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">
+              <h2 className="mb-0 text-sm font-semibold text-slate-900">
                 Notifications
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="mb-0 text-xs text-slate-500">
                 {unreadCount > 0
                   ? `${unreadCount} unread`
                   : 'You are all caught up'}
@@ -134,22 +137,23 @@ export default function NotificationBell() {
           </div>
 
           {loading && notifications.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-slate-500">
+            <p className="mb-0 px-4 py-6 text-center text-sm text-slate-500">
               Loading notifications…
             </p>
           ) : error && notifications.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-red-600">
+            <p className="mb-0 px-4 py-6 text-center text-sm text-red-600">
               {error}
             </p>
           ) : notifications.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-slate-500">
+            <p className="mb-0 px-4 py-6 text-center text-sm text-slate-500">
               No notifications yet.
             </p>
           ) : (
             <ul className="max-h-96 divide-y divide-slate-100 overflow-y-auto">
               {notifications.map((notification) => {
                 const path =
-                  notificationPath(notification, user?.role) || '/notifications'
+                  notificationPath(notification, user?.role) ||
+                  notificationsPath
                 return (
                   <li key={notification.id}>
                     <Link
@@ -173,7 +177,7 @@ export default function NotificationBell() {
                         />
                         <div className="min-w-0">
                           <p
-                            className={`text-sm ${
+                            className={`mb-0 text-sm ${
                               notification.isRead
                                 ? 'font-medium text-slate-800'
                                 : 'font-semibold text-slate-900'
@@ -181,10 +185,10 @@ export default function NotificationBell() {
                           >
                             {notification.title}
                           </p>
-                          <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">
+                          <p className="mb-0 mt-0.5 line-clamp-2 text-xs text-slate-600">
                             {notification.message}
                           </p>
-                          <p className="mt-1 text-[11px] text-slate-400">
+                          <p className="mb-0 mt-1 text-[11px] text-slate-400">
                             {formatNotificationDate(notification.createdAt)}
                           </p>
                         </div>
@@ -198,7 +202,7 @@ export default function NotificationBell() {
 
           <div className="border-t border-slate-200 px-4 py-2.5 text-center">
             <Link
-              to="/notifications"
+              to={notificationsPath}
               onClick={() => setOpen(false)}
               className="text-xs font-medium text-brand-700 transition hover:text-brand-800"
             >

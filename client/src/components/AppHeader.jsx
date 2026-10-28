@@ -5,9 +5,8 @@ import NotificationBell from './NotificationBell.jsx'
 
 export default function AppHeader({ home, links }) {
   const { logout } = useAuth()
-  const { summary } = useCart()
+  const _summary = useCart()
   const navigate = useNavigate()
-  const cartCount = summary.itemCount
 
   function handleLogout() {
     logout()
@@ -15,33 +14,29 @@ export default function AppHeader({ home, links }) {
   }
 
   return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-3">
+    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 shadow-sm backdrop-blur">
+      <div className="mx-auto flex max-w-7xl flex-nowrap items-center justify-between gap-3 px-5 py-3 sm:px-8">
         <Link
           to={home}
-          className="text-lg font-semibold tracking-tight text-slate-900"
+          className="flex items-center gap-2 text-lg font-bold tracking-tight text-slate-900"
         >
-          MediConnect
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-lg text-white">+</span>
+          Medi<span className="text-blue-600">Connect</span>
         </Link>
 
         {links.length > 0 && (
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <nav className="order-3 flex min-w-0 max-w-full flex-1 items-center gap-1 overflow-x-auto pb-1 lg:order-none lg:max-w-[58%]">
             {links.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `text-sm font-medium transition hover:text-slate-900 ${
-                    isActive ? 'text-brand-600' : 'text-slate-600'
+                  `rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                    isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'
                   }`
                 }
               >
                 {item.label}
-                {item.to === '/cart' && cartCount > 0 ? (
-                  <span className="ml-1.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-xs font-semibold text-brand-700">
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </span>
-                ) : null}
               </NavLink>
             ))}
           </nav>
@@ -52,7 +47,7 @@ export default function AppHeader({ home, links }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
           >
             Sign out
           </button>

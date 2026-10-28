@@ -1,16 +1,13 @@
-import {
-  VERIFICATION_STYLES,
-  verificationLabel,
-} from '../lib/adminFormat.js'
+import StatusBadge from './StatusBadge.jsx'
+import { verificationLabel } from '../lib/adminFormat.js'
 
-export default function VerificationBadge({ status }) {
+export default function VerificationBadge({ status, dot = true, size }) {
   return (
-    <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        VERIFICATION_STYLES[status] || 'bg-slate-100 text-slate-700'
-      }`}
-    >
-      {verificationLabel(status)}
-    </span>
+    <StatusBadge
+      status={status}
+      label={verificationLabel(status)}
+      dot={dot}
+      size={size}
+    />
   )
 }

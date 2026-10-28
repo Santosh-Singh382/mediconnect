@@ -179,26 +179,59 @@ export default function DoctorSearchPage() {
   const currentPage = Number(searchParams.get('page')) || 1
   const { doctors, pagination } = state.data || { doctors: [], pagination: null }
   const { total, totalPages } = pagination || { total: 0, totalPages: 0 }
+  const activeFilterCount = Object.values(draftFromParams(searchParams)).filter(Boolean).length
 
   return (
     <div className="min-h-screen bg-slate-50">
       <PublicHeader />
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <section>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            Find a Doctor
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Search approved specialists by name, specialization, qualification,
-            or clinic.
-          </p>
+      <main className="mx-auto max-w-5xl px-4 py-7 sm:px-6 sm:py-10">
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-xl sm:px-8 sm:py-10">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-600/30 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-teal-500/15 blur-3xl" aria-hidden="true" />
+          <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">
+                MediConnect care network
+              </p>
+              <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+                Find care that fits you
+              </h1>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
+                Connect with approved specialists, compare experience and fees,
+                and book a consultation with confidence.
+              </p>
+            </div>
+            <div className="grid w-full max-w-sm grid-cols-3 gap-2">
+              {[
+                ['01', 'Approved doctors'],
+                ['02', 'Flexible filters'],
+                ['03', 'Easy booking'],
+              ].map(([number, label]) => (
+                <div key={number} className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur">
+                  <p className="text-lg font-black text-white">{number}</p>
+                  <p className="mt-1 text-[10px] leading-4 text-slate-300">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <form
           onSubmit={handleSearch}
-          className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+          className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5"
         >
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Search specialists</h2>
+              <p className="mt-1 text-xs text-slate-500">Filter by expertise, experience, consultation fee, language, or availability.</p>
+            </div>
+            {activeFilterCount > 0 ? (
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                {activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active
+              </span>
+            ) : null}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label
@@ -360,14 +393,14 @@ export default function DoctorSearchPage() {
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+                className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-brand-700"
               >
                 Search
               </button>
               <button
                 type="button"
                 onClick={handleClear}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
               >
                 Clear filters
               </button>
@@ -428,27 +461,33 @@ export default function DoctorSearchPage() {
           </div>
         ) : (
           <>
-            <p className="mt-6 text-sm text-slate-500">
-              {total} {total === 1 ? 'doctor' : 'doctors'} found
-            </p>
+            <div className="mt-8">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Care specialists</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {total} {total === 1 ? 'doctor' : 'doctors'} found
+              </p>
+            </div>
             <section className="mt-3 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {doctors.map((doctor) => (
                 <article
                   key={doctor.id}
-                  className="flex flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-100/60"
                 >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarColor(doctor.id)}`}
-                      aria-hidden="true"
-                    >
+                  <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50/60 px-5 py-3">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-black shadow-sm ring-1 ring-white ${avatarColor(doctor.id)}`} aria-hidden="true">
                       {initials(doctor.name)}
                     </div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                      Verified specialist
+                    </span>
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                  <div className="flex items-start gap-4">
                     <div>
                       <h2 className="text-base font-semibold text-slate-900">
                         {doctor.name}
                       </h2>
-                      <p className="text-sm font-medium text-brand-700">
+                      <p className="text-sm font-bold text-brand-700">
                         {doctor.specialization}
                       </p>
                       <p className="mt-0.5 text-sm text-slate-500">
@@ -461,9 +500,9 @@ export default function DoctorSearchPage() {
                   </div>
 
                   <dl className="mt-4 space-y-2 text-sm">
-                    <div>
-                      <dt className="font-medium text-slate-900">Consultation fee</dt>
-                      <dd className="text-slate-600">
+                    <div className="rounded-xl bg-blue-50/70 p-3">
+                      <dt className="text-xs font-bold uppercase tracking-wide text-blue-700">Consultation fee</dt>
+                      <dd className="mt-1 text-lg font-black text-slate-950">
                         {doctor.consultationFee !== null
                           ? `₹${doctor.consultationFee}`
                           : 'Not set'}
@@ -489,10 +528,11 @@ export default function DoctorSearchPage() {
                   <div className="mt-auto pt-4">
                     <Link
                       to={`/doctors/${doctor.id}`}
-                      className="inline-block w-full rounded-md border border-brand-600 px-3 py-1.5 text-center text-sm font-medium text-brand-700 transition hover:bg-brand-50"
+                      className="inline-block w-full rounded-xl bg-brand-600 px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-brand-700"
                     >
                       View profile
                     </Link>
+                  </div>
                   </div>
                 </article>
               ))}

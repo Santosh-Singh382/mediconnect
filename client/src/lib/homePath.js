@@ -48,7 +48,7 @@ export function homeLinksFor(user) {
       { to: '/admin/users', label: 'Users' },
       { to: '/admin/medicines', label: 'Medicines' },
       { to: '/admin/orders', label: 'Orders' },
-      { to: '/notifications', label: 'Notifications' },
+      { to: '/admin/notifications', label: 'Notifications' },
     ]
   }
   return [{ to: '/notifications', label: 'Notifications' }]

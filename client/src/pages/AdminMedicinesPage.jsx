@@ -1,8 +1,17 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import PageHeader from '../components/PageHeader.jsx'
+import Button from '../components/Button.jsx'
+import Input from '../components/Input.jsx'
+import Select from '../components/Select.jsx'
+import Table from '../components/Table.jsx'
+import Badge from '../components/Badge.jsx'
+import Alert from '../components/Alert.jsx'
+import AdminPagination from '../components/AdminPagination.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
-import AdminPagination from '../components/AdminPagination.jsx'
+import EmptyState from '../components/EmptyState.jsx'
+import AdminIcon from '../components/AdminIcon.jsx'
 import { getAdminMedicines, getAdminPharmacies } from '../lib/adminApi.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
 import {
@@ -11,7 +20,7 @@ import {
   MEDICINE_CATEGORY_FILTER_OPTIONS,
   medicineCategoryLabel,
 } from '../lib/medicineFormat.js'
-import { inputClass } from '../lib/formStyles.js'
+import { formatAdminDate } from '../lib/adminFormat.js'
 
 const PAGE_LIMIT = 20
 
@@ -30,31 +39,128 @@ const BOOLEAN_OPTIONS = [
 ]
 
 function MedicineFlags({ medicine }) {
+  const hasFlags =
+    medicine.isExpired ||
+    !medicine.inStock ||
+    !medicine.isActive ||
+    medicine.prescriptionRequired
+
+  if (!hasFlags) {
+    return <span className="text-xs text-slate-400">—</span>
+  }
+
   return (
     <div className="flex flex-wrap gap-1.5">
       {medicine.isExpired ? (
-        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+        <Badge variant="danger" size="sm">
           Expired
-        </span>
+        </Badge>
       ) : null}
       {!medicine.inStock ? (
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+        <Badge variant="warning" size="sm">
           Out of stock
-        </span>
+        </Badge>
       ) : null}
       {!medicine.isActive ? (
-        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
+        <Badge variant="neutral" size="sm">
           Inactive
-        </span>
+        </Badge>
       ) : null}
       {medicine.prescriptionRequired ? (
-        <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">
-          Rx
-        </span>
+        <Badge variant="primary" size="sm">
+          Rx required
+        </Badge>
       ) : null}
     </div>
   )
 }
+
+const COLUMNS = [
+  {
+    key: 'name',
+    header: 'Medicine',
+    render: (medicine) => (
+      <div className="min-w-0">
+        <p className="mb-0 font-medium text-slate-900">{medicine.name}</p>
+        <p className="mb-0 mt-0.5 text-xs text-slate-500">
+          {[
+            medicine.genericName,
+            medicine.strength,
+            medicine.packSize,
+          ]
+            .filter(Boolean)
+            .join(' · ') || 'No additional details'}
+        </p>
+      </div>
+    ),
+  },
+  {
+    key: 'category',
+    header: 'Category',
+    render: (medicine) => (
+      <Badge variant="secondary">
+        {medicineCategoryLabel(medicine.category)}
+      </Badge>
+    ),
+  },
+  {
+    key: 'pharmacy',
+    header: 'Pharmacy',
+    render: (medicine) => (
+      <div className="min-w-0">
+        <p className="mb-0 truncate text-slate-700">
+          {medicine.pharmacy.pharmacyName || 'Unknown pharmacy'}
+        </p>
+        <p className="mb-0 mt-0.5 text-xs text-slate-400">
+          Added {formatAdminDate(medicine.createdAt) || '—'}
+        </p>
+      </div>
+    ),
+  },
+  {
+    key: 'price',
+    header: 'Price',
+    align: 'right',
+    noWrap: true,
+    render: (medicine) => (
+      <span className="font-medium text-slate-900">
+        {formatMedicinePrice(medicine.price)}
+      </span>
+    ),
+  },
+  {
+    key: 'stockQuantity',
+    header: 'Stock',
+    align: 'right',
+    noWrap: true,
+    render: (medicine) => (
+      <span
+        className={
+          medicine.inStock
+            ? 'font-medium text-slate-900'
+            : 'font-medium text-amber-700'
+        }
+      >
+        {medicine.stockQuantity}
+      </span>
+    ),
+  },
+  {
+    key: 'expiryDate',
+    header: 'Expiry',
+    noWrap: true,
+    render: (medicine) => (
+      <span className={medicine.isExpired ? 'text-red-600' : 'text-slate-600'}>
+        {formatExpiryDate(medicine.expiryDate)}
+      </span>
+    ),
+  },
+  {
+    key: 'flags',
+    header: 'Flags',
+    render: (medicine) => <MedicineFlags medicine={medicine} />,
+  },
+]
 
 export default function AdminMedicinesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -73,6 +179,7 @@ export default function AdminMedicinesPage() {
     data: null,
   })
   const [pharmacies, setPharmacies] = useState([])
+  const requestVersion = useRef(0)
 
   useEffect(() => {
     getAdminPharmacies({ limit: 50, sort: 'name_asc' })
@@ -80,44 +187,55 @@ export default function AdminMedicinesPage() {
       .catch(() => setPharmacies([]))
   }, [])
 
-  const load = useCallback(() => {
-    setState({ loading: true, error: null, data: null })
-    const params = {
-      limit: PAGE_LIMIT,
-      sort: searchParams.get('sort') || 'newest',
-    }
-    for (const key of [
-      'q',
-      'category',
-      'pharmacyId',
-      'isActive',
-      'expired',
-      'inStock',
-      'page',
-    ]) {
-      const value = searchParams.get(key)
-      if (value) params[key] = value
-    }
+  const load = useCallback(
+    ({ showLoading = true } = {}) => {
+      requestVersion.current += 1
+      const version = requestVersion.current
 
-    return getAdminMedicines(params)
-      .then((response) => {
-        setState({
-          loading: false,
-          error: null,
-          data: response.data.data,
+      if (showLoading) {
+        setState({ loading: true, error: null, data: null })
+      }
+
+      const params = {
+        limit: PAGE_LIMIT,
+        sort: searchParams.get('sort') || 'newest',
+      }
+      for (const key of [
+        'q',
+        'category',
+        'pharmacyId',
+        'isActive',
+        'expired',
+        'inStock',
+        'page',
+      ]) {
+        const value = searchParams.get(key)
+        if (value) params[key] = value
+      }
+
+      return getAdminMedicines(params)
+        .then((response) => {
+          if (requestVersion.current !== version) return
+          setState({
+            loading: false,
+            error: null,
+            data: response.data.data,
+          })
         })
-      })
-      .catch((error) => {
-        setState({
-          loading: false,
-          error: getApiErrorMessage(
-            error,
-            'Unable to load medicine inventory right now.',
-          ),
-          data: null,
+        .catch((error) => {
+          if (requestVersion.current !== version) return
+          setState((current) => ({
+            loading: false,
+            error: getApiErrorMessage(
+              error,
+              'Unable to load medicine inventory right now.',
+            ),
+            data: showLoading ? null : current.data,
+          }))
         })
-      })
-  }, [searchParams])
+    },
+    [searchParams],
+  )
 
   useEffect(() => {
     setDraft({
@@ -133,6 +251,9 @@ export default function AdminMedicinesPage() {
 
   useEffect(() => {
     load()
+    return () => {
+      requestVersion.current += 1
+    }
   }, [load])
 
   function handleApply(event) {
@@ -187,348 +308,205 @@ export default function AdminMedicinesPage() {
 
   return (
     <div>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-          Medicine monitoring
-        </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Read-only platform inventory with stock, expiry, and pharmacy context.
-        </p>
-      </header>
+      <PageHeader
+        title="Medicines"
+        description="Monitor medicine listings across pharmacies. This inventory view is read-only."
+        action={
+          <Button
+            variant="secondary"
+            onClick={() => load()}
+            disabled={state.loading}
+          >
+            <AdminIcon name="refresh" className="h-4 w-4" />
+            Refresh
+          </Button>
+        }
+      />
 
-      <p className="mt-4 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
-        Admin medicine records are read-only. Pharmacies remain responsible for
-        their inventory.
-      </p>
+      <div className="mt-4 flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <AdminIcon name="shield" className="h-4 w-4" />
+        </span>
+        <p className="mb-0 text-xs leading-5 text-slate-600">
+          Admin medicine records are read-only. Pharmacies remain responsible
+          for prices, stock levels, expiry dates, and listing availability.
+        </p>
+      </div>
 
       <form
         onSubmit={handleApply}
-        className="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+        className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="admin-medicine-search"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Search
-            </label>
-            <input
-              id="admin-medicine-search"
-              type="search"
-              value={draft.q}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, q: event.target.value }))
-              }
-              placeholder="Medicine name, generic name, or brand"
-              maxLength={100}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="admin-medicine-category"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Category
-            </label>
-            <select
-              id="admin-medicine-category"
-              value={draft.category}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  category: event.target.value,
-                }))
-              }
-              className={inputClass}
-            >
-              {MEDICINE_CATEGORY_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="admin-medicine-pharmacy"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Pharmacy
-            </label>
-            <select
-              id="admin-medicine-pharmacy"
-              value={draft.pharmacyId}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  pharmacyId: event.target.value,
-                }))
-              }
-              className={inputClass}
-            >
-              <option value="">All pharmacies</option>
-              {pharmacies.map((pharmacy) => (
-                <option key={pharmacy.id} value={pharmacy.id}>
-                  {pharmacy.pharmacyName}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="admin-medicine-active"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Active
-            </label>
-            <select
-              id="admin-medicine-active"
-              value={draft.isActive}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  isActive: event.target.value,
-                }))
-              }
-              className={inputClass}
-            >
-              {BOOLEAN_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="admin-medicine-expired"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Expired
-            </label>
-            <select
-              id="admin-medicine-expired"
-              value={draft.expired}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  expired: event.target.value,
-                }))
-              }
-              className={inputClass}
-            >
-              {BOOLEAN_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="admin-medicine-stock"
-              className="block text-sm font-medium text-slate-700"
-            >
-              In stock
-            </label>
-            <select
-              id="admin-medicine-stock"
-              value={draft.inStock}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  inStock: event.target.value,
-                }))
-              }
-              className={inputClass}
-            >
-              {BOOLEAN_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="admin-medicine-sort"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Sort by
-            </label>
-            <select
-              id="admin-medicine-sort"
-              value={draft.sort}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, sort: event.target.value }))
-              }
-              className={inputClass}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button
-            type="submit"
-            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
-          >
-            Apply filters
-          </button>
+        <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 sm:px-5">
+          <AdminIcon name="filter" className="h-4 w-4 text-slate-400" />
+          <h2 className="mb-0 text-sm font-semibold text-slate-900">Filters</h2>
           {hasFilters ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Clear filters
-            </button>
+            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+              Active
+            </span>
           ) : null}
+        </div>
+        <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
+          <Input
+            type="search"
+            label="Search"
+            containerClassName="sm:col-span-2"
+            value={draft.q}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, q: event.target.value }))
+            }
+            placeholder="Medicine name, generic name, or brand"
+            maxLength={100}
+            leadingIcon={<AdminIcon name="search" className="h-4 w-4" />}
+          />
+          <Select
+            label="Category"
+            value={draft.category}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                category: event.target.value,
+              }))
+            }
+            options={MEDICINE_CATEGORY_FILTER_OPTIONS}
+          />
+          <Select
+            label="Pharmacy"
+            value={draft.pharmacyId}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                pharmacyId: event.target.value,
+              }))
+            }
+            options={[
+              { value: '', label: 'All pharmacies' },
+              ...pharmacies.map((pharmacy) => ({
+                value: pharmacy.id,
+                label: pharmacy.pharmacyName,
+              })),
+            ]}
+          />
+          <Select
+            label="Active listing"
+            value={draft.isActive}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                isActive: event.target.value,
+              }))
+            }
+            options={BOOLEAN_OPTIONS}
+          />
+          <Select
+            label="Expired"
+            value={draft.expired}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                expired: event.target.value,
+              }))
+            }
+            options={BOOLEAN_OPTIONS}
+          />
+          <Select
+            label="In stock"
+            value={draft.inStock}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                inStock: event.target.value,
+              }))
+            }
+            options={BOOLEAN_OPTIONS}
+          />
+          <Select
+            label="Sort by"
+            value={draft.sort}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, sort: event.target.value }))
+            }
+            options={SORT_OPTIONS}
+          />
+        </div>
+        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
+          <Button variant="secondary" onClick={handleClear} disabled={!hasFilters}>
+            Clear filters
+          </Button>
+          <Button type="submit">Apply filters</Button>
         </div>
       </form>
 
-      {state.loading ? (
-        <div className="mt-8">
+      {state.loading && !state.data ? (
+        <div className="mt-6">
           <LoadingState label="Loading medicine inventory…" />
         </div>
-      ) : state.error ? (
-        <div className="mt-8">
-          <ErrorState message={state.error} onRetry={load} />
-        </div>
-      ) : medicines.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-slate-200 bg-white p-10 text-center shadow-sm">
-          <h2 className="text-base font-semibold text-slate-900">
-            No medicines found
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Try changing the search, pharmacy, expiry, or stock filters.
-          </p>
+      ) : state.error && !state.data ? (
+        <div className="mt-6">
+          <ErrorState message={state.error} onRetry={() => load()} />
         </div>
       ) : (
         <>
-          <div className="mt-6 hidden overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm lg:block">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  {[
-                    'Medicine',
-                    'Category',
-                    'Pharmacy',
-                    'Price',
-                    'Stock',
-                    'Expiry',
-                    'Flags',
-                  ].map((label) => (
-                    <th
-                      key={label}
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
-                    >
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {medicines.map((medicine) => (
-                  <tr key={medicine.id} className="align-top">
-                    <td className="px-4 py-4">
-                      <p className="text-sm font-semibold text-slate-900">
-                        {medicine.name}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {[
-                          medicine.genericName,
-                          medicine.strength,
-                          medicine.packSize,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ') || 'No additional details'}
-                      </p>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-slate-700">
-                      {medicineCategoryLabel(medicine.category)}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-slate-700">
-                      {medicine.pharmacy.pharmacyName || 'Unknown pharmacy'}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-900">
-                      {formatMedicinePrice(medicine.price)}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-slate-900">
-                      {medicine.stockQuantity}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">
-                      {formatExpiryDate(medicine.expiryDate)}
-                    </td>
-                    <td className="px-4 py-4">
-                      <MedicineFlags medicine={medicine} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {state.error ? (
+            <Alert
+              variant="danger"
+              className="mt-4"
+              action={
+                <Button size="xs" variant="secondary" onClick={() => load()}>
+                  Try again
+                </Button>
+              }
+            >
+              {state.error}
+            </Alert>
+          ) : null}
 
-          <div className="mt-6 space-y-3 lg:hidden">
-            {medicines.map((medicine) => (
-              <article
-                key={medicine.id}
-                className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h2 className="text-sm font-semibold text-slate-900">
-                      {medicine.name}
-                    </h2>
-                    <p className="text-xs text-slate-500">
-                      {medicine.pharmacy.pharmacyName || 'Unknown pharmacy'}
-                    </p>
-                  </div>
-                  <MedicineFlags medicine={medicine} />
+          {medicines.length === 0 ? (
+            <div className="mt-6">
+              <EmptyState
+                title="No medicines found"
+                description="Try changing the search, pharmacy, expiry, or stock filters."
+                action={
+                  hasFilters ? (
+                    <Button variant="secondary" onClick={handleClear}>
+                      Clear filters
+                    </Button>
+                  ) : null
+                }
+              />
+            </div>
+          ) : (
+            <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
+                <div>
+                  <h2 className="mb-0 text-sm font-semibold text-slate-900">
+                    Medicine inventory
+                  </h2>
+                  <p className="mb-0 mt-0.5 text-xs text-slate-500">
+                    {pagination?.total ?? medicines.length}{' '}
+                    {pagination?.total === 1 ? 'listing' : 'listings'}
+                  </p>
                 </div>
-                <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <dt className="text-slate-500">Category</dt>
-                    <dd className="font-medium text-slate-800">
-                      {medicineCategoryLabel(medicine.category)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-500">Price</dt>
-                    <dd className="font-medium text-slate-800">
-                      {formatMedicinePrice(medicine.price)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-500">Stock</dt>
-                    <dd className="font-medium text-slate-800">
-                      {medicine.stockQuantity}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-500">Expiry</dt>
-                    <dd className="font-medium text-slate-800">
-                      {formatExpiryDate(medicine.expiryDate)}
-                    </dd>
-                  </div>
-                </dl>
-              </article>
-            ))}
-          </div>
-
-          <AdminPagination
-            pagination={pagination}
-            currentPage={currentPage}
-            onChange={changePage}
-            label="Medicine pagination"
-          />
+                <span className="hidden items-center gap-1.5 text-xs text-slate-400 sm:flex">
+                  <AdminIcon name="eye" className="h-3.5 w-3.5" />
+                  Read-only
+                </span>
+              </div>
+              <Table
+                columns={COLUMNS}
+                data={medicines}
+                rowKey="id"
+                minWidthClass="min-w-[1040px]"
+                caption="Medicine inventory"
+              />
+              <AdminPagination
+                pagination={pagination}
+                currentPage={currentPage}
+                onChange={changePage}
+                label="Medicine pagination"
+              />
+            </div>
+          )}
         </>
       )}
     </div>

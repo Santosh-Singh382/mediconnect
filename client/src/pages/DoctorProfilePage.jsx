@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
-import AppHeader from '../components/AppHeader.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import { getDoctorProfile, saveDoctorProfile } from '../lib/doctorApi.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
 import { inputClass } from '../lib/formStyles.js'
-import { homePathFor, homeLinksFor } from '../lib/homePath.js'
+import ProfileShell from '../components/ProfileShell.jsx'
 
 const DAYS = [
   'MONDAY',
@@ -80,7 +79,7 @@ function VerificationBadge({ status }) {
 
 function Card({ title, children, action }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
         <h2 className="text-base font-semibold text-slate-900">{title}</h2>
         {action}
@@ -360,23 +359,21 @@ export default function DoctorProfilePage() {
 
   if (loadState.loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-        <main className="mx-auto max-w-3xl px-6 py-12">
+      <ProfileShell user={user} role="Doctor">
+        <div className="py-6">
           <LoadingState label="Loading your profile…" />
-        </main>
-      </div>
+        </div>
+      </ProfileShell>
     )
   }
 
   if (loadState.error) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-        <main className="mx-auto max-w-3xl px-6 py-12">
+      <ProfileShell user={user} role="Doctor">
+        <div className="py-6">
           <ErrorState message={loadState.error} onRetry={retry} />
-        </main>
-      </div>
+        </div>
+      </ProfileShell>
     )
   }
 
@@ -387,18 +384,17 @@ export default function DoctorProfilePage() {
     : []
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-
-      <main className="mx-auto max-w-3xl px-6 py-10">
+    <ProfileShell user={user} role="Doctor">
+      <div className="min-w-0 py-2 lg:py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">
-              My profile
-            </h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Your practice details help patients find and understand you.
-            </p>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Practice profile</p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">My profile</h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Your practice details help patients find and understand you.
+              </p>
+            </div>
           </div>
           {profile ? (
             <div className="text-right">
@@ -844,7 +840,7 @@ export default function DoctorProfilePage() {
             </Card>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </ProfileShell>
   )
 }

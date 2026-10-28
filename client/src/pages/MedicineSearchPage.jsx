@@ -94,7 +94,16 @@ function PrescriptionBadge({ required }) {
 
 function MedicineCard({ medicine, canAdd, adding, feedback, onAdd }) {
   return (
-    <article className="flex flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-200 hover:shadow-md">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-xl hover:shadow-blue-100/60">
+      <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50/60 px-5 py-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-base font-black text-brand-700 shadow-sm ring-1 ring-blue-100">
+          {medicine.name.charAt(0).toUpperCase()}
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+          Verified listing
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wide text-brand-700">
@@ -114,7 +123,7 @@ function MedicineCard({ medicine, canAdd, adding, feedback, onAdd }) {
               .join(' · ') || 'Strength not listed'}
           </p>
         </div>
-        <p className="shrink-0 text-lg font-semibold text-slate-900">
+        <p className="shrink-0 text-xl font-black tracking-tight text-slate-950">
           {formatMedicinePrice(medicine.price)}
         </p>
       </div>
@@ -154,7 +163,7 @@ function MedicineCard({ medicine, canAdd, adding, feedback, onAdd }) {
         </div>
       </dl>
 
-      <div className="mt-4 rounded-md bg-slate-50 px-3 py-2.5">
+      <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 transition group-hover:border-blue-100 group-hover:bg-blue-50/40">
         <p className="text-sm font-medium text-slate-900">
           {medicine.pharmacy.pharmacyName}
         </p>
@@ -216,6 +225,7 @@ function MedicineCard({ medicine, canAdd, adding, feedback, onAdd }) {
             ) : null}
           </p>
         ) : null}
+      </div>
       </div>
     </article>
   )
@@ -348,32 +358,59 @@ export default function MedicineSearchPage() {
     pagination: null,
   }
   const { total, totalPages } = pagination || { total: 0, totalPages: 0 }
+  const activeFilterCount = FILTER_KEYS.filter((key) => searchParams.get(key)).length
 
   return (
     <div className="min-h-screen bg-slate-50">
       <PublicHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-gradient-to-br from-brand-50 via-white to-slate-50 px-6 py-8 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">
-              Verified pharmacy inventory
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
-              Medicines
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
-              Search medicines listed by approved, active pharmacies. Compare
-              prices, availability, and prescription requirements before
-              visiting a pharmacy.
-            </p>
+      <main className="mx-auto max-w-6xl px-4 py-7 sm:px-6 sm:py-10">
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-xl sm:px-8 sm:py-10">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-600/30 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-cyan-500/15 blur-3xl" aria-hidden="true" />
+          <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">
+                MediConnect pharmacy
+              </p>
+              <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+                Find the right medicine
+              </h1>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
+                Compare trusted pharmacy listings, transparent prices, stock availability,
+                and prescription requirements in one secure place.
+              </p>
+            </div>
+            <div className="grid w-full max-w-sm grid-cols-3 gap-2">
+              {[
+                ['01', 'Verified pharmacies'],
+                ['02', 'Clear pricing'],
+                ['03', 'Secure checkout'],
+              ].map(([number, label]) => (
+                <div key={number} className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur">
+                  <p className="text-lg font-black text-white">{number}</p>
+                  <p className="mt-1 text-[10px] leading-4 text-slate-300">{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         <form
           onSubmit={handleSearch}
-          className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+          className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5"
         >
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Search pharmacy inventory</h2>
+              <p className="mt-1 text-xs text-slate-500">Filter by price, category, stock, or prescription type.</p>
+            </div>
+            {activeFilterCount > 0 ? (
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                {activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active
+              </span>
+            ) : null}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="sm:col-span-2">
               <label
@@ -523,14 +560,14 @@ export default function MedicineSearchPage() {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="submit"
-                className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+                className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-brand-700"
               >
                 Search medicines
               </button>
               <button
                 type="button"
                 onClick={handleClear}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
               >
                 Clear filters
               </button>
@@ -589,9 +626,14 @@ export default function MedicineSearchPage() {
           </div>
         ) : (
           <>
-            <p className="mt-6 text-sm text-slate-500">
-              {total} {total === 1 ? 'medicine' : 'medicines'} found
-            </p>
+            <div className="mt-8 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Available now</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {total} {total === 1 ? 'medicine' : 'medicines'} found
+                </p>
+              </div>
+            </div>
 
             <section className="mt-3 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {medicines.map((medicine) => (

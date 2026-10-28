@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
-import AppHeader from '../components/AppHeader.jsx'
+import WorkspaceShell from '../components/WorkspaceShell.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import MedicalDocumentsSection from '../components/MedicalDocumentsSection.jsx'
 import { getMedicalRecords } from '../lib/medicalRecordApi.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
-import { homePathFor, homeLinksFor } from '../lib/homePath.js'
 import { inputClass } from '../lib/formStyles.js'
 import {
   recordTypeLabel,
@@ -93,28 +92,31 @@ export default function MyMedicalRecordsPage() {
     : 'No medical records yet. Your doctor can create a record after a completed consultation and it will appear here.'
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-
-      <main className="mx-auto max-w-4xl px-6 py-10">
-        <section>
-          <div className="flex flex-wrap items-start justify-between gap-4">
+    <WorkspaceShell user={user}>
+      <div className="py-2 lg:py-4">
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-xl sm:px-10 sm:py-10">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-600/30 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-teal-500/15 blur-3xl" aria-hidden="true" />
+          <div className="relative flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">
+                Your health library
+              </p>
+              <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
                 Medical Records
               </h1>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
                 {isDoctor
                   ? 'Review the medical records you have created for your patients.'
-                  : 'View the medical records your doctors have shared with you.'}
+                  : 'Keep your reports, diagnoses, and consultation history organized in one private place.'}
               </p>
             </div>
             {!isDoctor && (
               <Link
                 to="/medical-records/upload"
-                className="shrink-0 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+                className="inline-flex w-fit items-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/30 transition hover:-translate-y-0.5 hover:bg-blue-500"
               >
-                + Upload medical document
+                + Upload document
               </Link>
             )}
           </div>
@@ -124,8 +126,17 @@ export default function MyMedicalRecordsPage() {
 
         <form
           onSubmit={handleApply}
-          className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+          className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5"
         >
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Browse your records</h2>
+              <p className="mt-1 text-xs text-slate-500">Filter your health history by record type.</p>
+            </div>
+            {searchParams.get('recordType') ? (
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Filter active</span>
+            ) : null}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label
@@ -153,7 +164,7 @@ export default function MyMedicalRecordsPage() {
           <div className="mt-5 flex items-center gap-3">
             <button
               type="submit"
-              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+              className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-brand-700"
             >
               Apply filter
             </button>
@@ -161,7 +172,7 @@ export default function MyMedicalRecordsPage() {
               <button
                 type="button"
                 onClick={handleClear}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
               >
                 Clear filter
               </button>
@@ -178,7 +189,7 @@ export default function MyMedicalRecordsPage() {
             <ErrorState message={state.error} onRetry={retry} />
           </div>
         ) : records.length === 0 ? (
-          <div className="mt-8 rounded-lg border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
             <h2 className="text-base font-semibold text-slate-900">
               No medical records
             </h2>
@@ -189,7 +200,7 @@ export default function MyMedicalRecordsPage() {
               {isDoctor ? (
                 <Link
                   to="/doctor/appointments"
-                  className="inline-block rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+                  className="inline-block rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700"
                 >
                   Go to appointments
                 </Link>
@@ -205,9 +216,12 @@ export default function MyMedicalRecordsPage() {
           </div>
         ) : (
           <>
-            <p className="mt-6 text-sm text-slate-500">
-              {total} record{total === 1 ? '' : 's'}
-            </p>
+            <div className="mt-8">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Health history</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {total} record{total === 1 ? '' : 's'} available
+              </p>
+            </div>
 
             <section className="mt-3 space-y-4">
               {records.map((record) => {
@@ -215,13 +229,13 @@ export default function MyMedicalRecordsPage() {
                 return (
                   <article
                     key={record.id}
-                    className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+                    className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${recordTypeClass(record.recordType)}`}
+                            className={`inline-block rounded-full px-2.5 py-1 text-xs font-bold ${recordTypeClass(record.recordType)}`}
                           >
                             {recordTypeLabel(record.recordType)}
                           </span>
@@ -241,7 +255,7 @@ export default function MyMedicalRecordsPage() {
                       </div>
                       <Link
                         to={`/medical-records/${record.id}`}
-                        className="inline-block shrink-0 rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-700"
+                        className="inline-block shrink-0 rounded-xl bg-brand-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-brand-700"
                       >
                         View record
                       </Link>
@@ -300,7 +314,7 @@ export default function MyMedicalRecordsPage() {
             )}
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </WorkspaceShell>
   )
 }

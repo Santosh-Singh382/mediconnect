@@ -26,6 +26,7 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [apiError, setApiError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   function update(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }))
@@ -78,11 +79,20 @@ export default function RegisterPage() {
         </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      <div className="mb-6 flex items-center gap-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">1</span>
+        <div className="h-1 flex-1 rounded-full bg-blue-600" />
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">2</span>
+        <div className="h-1 flex-1 rounded-full bg-slate-100" />
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-400">3</span>
+      </div>
+      <p className="mb-5 text-xs font-semibold text-slate-500">Create your secure account</p>
+
+      <form onSubmit={handleSubmit} noValidate className="space-y-5">
         <div>
           <label
             htmlFor="name"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-semibold text-slate-800"
           >
             Full name
           </label>
@@ -102,7 +112,7 @@ export default function RegisterPage() {
         <div>
           <label
             htmlFor="register-email"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-semibold text-slate-800"
           >
             Email
           </label>
@@ -122,7 +132,7 @@ export default function RegisterPage() {
         <div>
           <label
             htmlFor="phone"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-semibold text-slate-800"
           >
             Phone (optional)
           </label>
@@ -140,18 +150,26 @@ export default function RegisterPage() {
         <div>
           <label
             htmlFor="register-password"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-semibold text-slate-800"
           >
             Password
           </label>
           <input
             id="register-password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             autoComplete="new-password"
             value={form.password}
             onChange={(event) => update('password', event.target.value)}
-            className={inputClass}
+            className={`${inputClass} pr-16`}
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((visible) => !visible)}
+            className="relative float-right -mt-9 mr-4 text-xs font-bold text-slate-500 hover:text-blue-600"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
           <p className="mt-1 text-xs text-slate-500">
             At least 8 characters.
           </p>
@@ -163,34 +181,44 @@ export default function RegisterPage() {
         <div>
           <label
             htmlFor="role"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-semibold text-slate-800"
           >
             I am a
           </label>
-          <select
-            id="role"
-            value={form.role}
-            onChange={(event) => update('role', event.target.value)}
-            className={inputClass}
-          >
-            {ROLE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {ROLE_OPTIONS.map((option) => {
+              const selected = form.role === option.value
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => update('role', option.value)}
+                  className={`rounded-xl border px-2 py-3 text-xs font-bold transition ${
+                    selected
+                      ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
+                      : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-300 hover:bg-white'
+                  }`}
+                  aria-pressed={selected}
+                >
+                  <span className="mb-1 block text-base">{option.value === 'PATIENT' ? '◉' : option.value === 'DOCTOR' ? '✚' : '▣'}</span>
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+          <input type="hidden" name="role" value={form.role} />
         </div>
 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-2 w-full rounded-xl bg-brand-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? 'Creating account…' : 'Create account'}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-600">
+      <p className="mt-7 text-center text-sm text-slate-600">
         Already have an account?{' '}
         <Link
           to="/login"

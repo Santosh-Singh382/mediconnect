@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Navigate, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
@@ -43,6 +43,7 @@ import AdminUsersPage from './pages/AdminUsersPage.jsx'
 import AdminMedicinesPage from './pages/AdminMedicinesPage.jsx'
 import AdminOrdersPage from './pages/AdminOrdersPage.jsx'
 import AdminOrderDetailsPage from './pages/AdminOrderDetailsPage.jsx'
+import AdminNotificationsPage from './pages/AdminNotificationsPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import AdminLayout from './components/AdminLayout.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
@@ -314,13 +315,17 @@ export default function App() {
         }
       >
         <Route index element={<AdminDashboardPage />} />
-        <Route path="dashboard" element={<AdminDashboardPage />} />
+        <Route path="dashboard" element={<Navigate to="/admin" replace />} />
         <Route path="doctors" element={<AdminDoctorsPage />} />
         <Route path="pharmacies" element={<AdminPharmaciesPage />} />
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="medicines" element={<AdminMedicinesPage />} />
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="orders/:orderId" element={<AdminOrderDetailsPage />} />
+        <Route
+          path="notifications"
+          element={<AdminNotificationsPage />}
+        />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

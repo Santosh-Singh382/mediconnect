@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import AppHeader from '../components/AppHeader.jsx'
+import WorkspaceShell from '../components/WorkspaceShell.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useCart } from '../hooks/useCart.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
-import { homePathFor, homeLinksFor } from '../lib/homePath.js'
 import {
   formatMedicinePrice,
   medicineCategoryLabel,
@@ -250,35 +249,29 @@ export default function PharmacyCartPage() {
     )
   }
 
-  const header = <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-
   if (loading && carts.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        {header}
-        <main className="mx-auto max-w-5xl px-6 py-12">
+      <WorkspaceShell user={user}>
+        <div className="py-6 lg:py-10">
           <LoadingState label="Loading your cart…" />
-        </main>
-      </div>
+        </div>
+      </WorkspaceShell>
     )
   }
 
   if (error && carts.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        {header}
-        <main className="mx-auto max-w-5xl px-6 py-12">
+      <WorkspaceShell user={user}>
+        <div className="py-6 lg:py-10">
           <ErrorState message={error} onRetry={refresh} />
-        </main>
-      </div>
+        </div>
+      </WorkspaceShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {header}
-
-      <main className="mx-auto max-w-5xl px-6 py-10">
+    <WorkspaceShell user={user}>
+      <div className="py-2 lg:py-4">
         <section>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
             Pharmacy cart
@@ -498,7 +491,7 @@ export default function PharmacyCartPage() {
             </div>
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </WorkspaceShell>
   )
 }

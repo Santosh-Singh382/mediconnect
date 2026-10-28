@@ -13,6 +13,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [fieldErrors, setFieldErrors] = useState({})
   const [apiError, setApiError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -53,7 +54,10 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell title="Sign in" subtitle="Access your MediConnect account.">
+    <AuthShell
+      title="Sign in"
+      subtitle="Access your MediConnect account."
+    >
       {apiError ? (
         <div
           role="alert"
@@ -63,11 +67,23 @@ export default function LoginPage() {
         </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      <div className="mb-6 flex items-center justify-between rounded-xl bg-blue-50 px-4 py-3 text-xs text-blue-800">
+        <span className="flex items-center gap-2 font-semibold">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">✓</span>
+          Secure sign in
+        </span>
+        <span className="text-blue-600">256-bit encrypted</span>
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="space-y-5"
+      >
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-semibold text-slate-800"
           >
             Email
           </label>
@@ -88,18 +104,28 @@ export default function LoginPage() {
         <div>
           <label
             htmlFor="password"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-semibold text-slate-800"
           >
             Password
           </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className={inputClass}
-          />
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className={`${inputClass} pr-16`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 transition hover:text-blue-600"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
           {fieldErrors.password ? (
             <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>
           ) : null}
@@ -108,13 +134,19 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-2 w-full rounded-xl bg-brand-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-600">
+      <div className="mt-7 grid grid-cols-3 gap-2 border-t border-slate-100 pt-5 text-center text-[11px] font-semibold text-slate-400">
+        <span>✓ Verified doctors</span>
+        <span>✓ Private records</span>
+        <span>✓ Easy bookings</span>
+      </div>
+
+      <p className="mt-7 text-center text-sm text-slate-600">
         New to MediConnect?{' '}
         <Link
           to="/register"

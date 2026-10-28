@@ -1,12 +1,11 @@
 ﻿import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
-import AppHeader from '../components/AppHeader.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import { getPatientProfile, savePatientProfile } from '../lib/patientApi.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
 import { inputClass } from '../lib/formStyles.js'
-import { homePathFor, homeLinksFor } from '../lib/homePath.js'
+import ProfileShell from '../components/ProfileShell.jsx'
 
 const GENDERS = ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']
 
@@ -47,7 +46,7 @@ function draftFrom(profile) {
 
 function Card({ title, children, action }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
         <h2 className="text-base font-semibold text-slate-900">{title}</h2>
         {action}
@@ -303,23 +302,21 @@ export default function PatientProfilePage() {
 
   if (loadState.loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-        <main className="mx-auto max-w-3xl px-6 py-12">
+      <ProfileShell user={user} role="Patient">
+        <div className="py-6">
           <LoadingState label="Loading your profileâ€¦" />
-        </main>
-      </div>
+        </div>
+      </ProfileShell>
     )
   }
 
   if (loadState.error) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-        <main className="mx-auto max-w-3xl px-6 py-12">
+      <ProfileShell user={user} role="Patient">
+        <div className="py-6">
           <ErrorState message={loadState.error} onRetry={retry} />
-        </main>
-      </div>
+        </div>
+      </ProfileShell>
     )
   }
 
@@ -327,17 +324,18 @@ export default function PatientProfilePage() {
   const hasProfile = profile !== null
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-
-      <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="text-2xl font-semibold text-slate-900">
-          My profile
-        </h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Your health profile helps doctors understand you before a
-          consultation.
-        </p>
+    <ProfileShell user={user} role="Patient">
+      <div className="min-w-0 py-2 lg:py-4">
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-7 text-white shadow-xl sm:px-8">
+          <div className="absolute -right-16 -top-24 h-56 w-56 rounded-full bg-blue-600/30 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">Personal health profile</p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight">My profile</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
+              Keep your health information current so doctors can prepare for better consultations.
+            </p>
+          </div>
+        </section>
 
         {saveState === 'saved' && (
           <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
@@ -677,7 +675,7 @@ export default function PatientProfilePage() {
             </Card>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </ProfileShell>
   )
 }

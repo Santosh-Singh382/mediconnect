@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
-import AppHeader from '../components/AppHeader.jsx'
+import WorkspaceShell from '../components/WorkspaceShell.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import AppointmentStatusBadge from '../components/AppointmentStatusBadge.jsx'
 import { getMyAppointments, cancelAppointment } from '../lib/appointmentApi.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
-import { homePathFor, homeLinksFor } from '../lib/homePath.js'
 import { inputClass } from '../lib/formStyles.js'
 import {
   formatAppointmentDate,
@@ -146,22 +145,22 @@ export default function MyAppointmentsPage() {
   const { total, totalPages } = pagination || { total: 0, totalPages: 0 }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AppHeader home={homePathFor(user)} links={homeLinksFor(user)} />
-
-      <main className="mx-auto max-w-4xl px-6 py-10">
-        <section>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            My Appointments
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Review, filter, and manage your appointment bookings.
-          </p>
+    <WorkspaceShell user={user}>
+      <div className="py-2 lg:py-4">
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-xl sm:px-10">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-600/30 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">Your care schedule</p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight">My Appointments</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
+              Review, filter, and manage your upcoming and completed consultations.
+            </p>
+          </div>
         </section>
 
         <form
           onSubmit={handleApply}
-          className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+          className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5"
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -204,7 +203,7 @@ export default function MyAppointmentsPage() {
           <div className="mt-5 flex items-center gap-3">
             <button
               type="submit"
-              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+              className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-brand-700"
             >
               Apply filters
             </button>
@@ -212,7 +211,7 @@ export default function MyAppointmentsPage() {
               <button
                 type="button"
                 onClick={handleClear}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
               >
                 Clear filters
               </button>
@@ -235,7 +234,7 @@ export default function MyAppointmentsPage() {
             <ErrorState message={state.error} onRetry={retry} />
           </div>
         ) : appointments.length === 0 ? (
-          <div className="mt-8 rounded-lg border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
             <h2 className="text-base font-semibold text-slate-900">
               No appointments found
             </h2>
@@ -279,7 +278,7 @@ export default function MyAppointmentsPage() {
                 return (
                   <article
                     key={appointment.id}
-                    className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="flex items-start gap-4">
@@ -440,7 +439,7 @@ export default function MyAppointmentsPage() {
             )}
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </WorkspaceShell>
   )
 }
