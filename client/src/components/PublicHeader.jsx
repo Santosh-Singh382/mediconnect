@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { useCart } from '../hooks/useCart.js'
 import NotificationBell from './NotificationBell.jsx'
+import { BRAND_NAME } from '../lib/branding.js'
 
 export default function PublicHeader() {
   const { user } = useAuth()
@@ -15,7 +16,7 @@ export default function PublicHeader() {
           to="/"
           className="text-lg font-semibold tracking-tight text-slate-900"
         >
-          MediConnect
+          {BRAND_NAME}
         </Link>
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Link

@@ -4,6 +4,7 @@ import AdminIcon from './AdminIcon.jsx'
 import NotificationBell from './NotificationBell.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useNotifications } from '../hooks/useNotifications.js'
+import { BRAND_NAME } from '../lib/branding.js'
 
 const NAV_SECTIONS = [
   {
@@ -127,7 +128,7 @@ function Brand() {
       </span>
       <div className="leading-tight">
         <p className="mb-0 text-[15px] font-semibold tracking-tight text-white">
-          Medi<span className="text-blue-600">Connect</span>
+          {BRAND_NAME}
         </p>
         <p className="mb-0 text-[11px] font-medium uppercase tracking-wider text-slate-400">
           Admin console

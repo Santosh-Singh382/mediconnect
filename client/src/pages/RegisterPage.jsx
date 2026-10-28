@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
 import AuthShell from '../components/AuthShell.jsx'
 import { inputClass } from '../lib/formStyles.js'
+import { BRAND_NAME } from '../lib/branding.js'
 
 const ROLE_OPTIONS = [
   { value: 'PATIENT', label: 'Patient' },
@@ -73,7 +74,7 @@ export default function RegisterPage() {
   return (
     <AuthShell
       title="Create an account"
-      subtitle="Join MediConnect as a patient, doctor, or pharmacy."
+      subtitle={`Join ${BRAND_NAME} as a patient, doctor, or pharmacy.`}
     >
       {apiError ? (
         <div

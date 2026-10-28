@@ -5,6 +5,7 @@ import { getApiErrorMessage } from '../lib/apiError.js'
 import { homePathFor } from '../lib/homePath.js'
 import AuthShell from '../components/AuthShell.jsx'
 import { inputClass } from '../lib/formStyles.js'
+import { BRAND_NAME } from '../lib/branding.js'
 
 export default function LoginPage() {
   const { user, login } = useAuth()
@@ -56,7 +57,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Sign in"
-      subtitle="Access your MediConnect account."
+      subtitle={`Access your ${BRAND_NAME} account.`}
     >
       {apiError ? (
         <div
@@ -159,7 +160,7 @@ export default function LoginPage() {
       </div>
 
       <p className="mt-7 text-center text-sm text-slate-600">
-        New to MediConnect?{' '}
+        New to {BRAND_NAME}?{' '}
         <Link
           to="/register"
           className="font-medium text-brand-600 hover:text-brand-700"

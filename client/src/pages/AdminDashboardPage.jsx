@@ -28,6 +28,7 @@ import {
   shortOrderId,
 } from '../lib/orderFormat.js'
 import { formatMedicinePrice } from '../lib/medicineFormat.js'
+import { BRAND_NAME } from '../lib/branding.js'
 
 const METRIC_CARDS = [
   {
@@ -474,7 +475,7 @@ export default function AdminDashboardPage() {
           <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-200">
               <span className="h-1.5 w-1.5 rounded-full bg-blue-300" />
-              Today at MediConnect
+              Today at {BRAND_NAME}
             </div>
             <h2 className="mb-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               Keep every care partner moving.

@@ -1,4 +1,4 @@
-/* MediConnect Premium Design System - Phase 1
+/* Telemedicine Premium Design System - Phase 1
    Color system, spacing, radius, shadows, transitions, gradients.
    All values follow a consistent 4/8-based system.
    Gradients are strategic; shadows are soft; transitions are purposeful.
@@ -247,7 +247,177 @@ a:not([class]):hover {
   color: var(--color-secondary-text);
 }
 
-/* --- Reduced Motion --- */
+.landing-page {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(219, 234, 254, 0.72), transparent 24rem),
+    radial-gradient(circle at 92% 38%, rgba(204, 251, 241, 0.48), transparent 28rem),
+    linear-gradient(180deg, #f8fbff 0%, #ffffff 42%, #f8fafc 100%);
+}
+
+.landing-page::before,
+.landing-page::after {
+  position: absolute;
+  z-index: -1;
+  border-radius: 9999px;
+  content: '';
+  pointer-events: none;
+}
+
+.landing-page::before {
+  top: 18rem;
+  right: -8rem;
+  width: 22rem;
+  height: 22rem;
+  background: rgba(191, 219, 254, 0.32);
+  filter: blur(12px);
+  animation: landing-orb-drift 14s ease-in-out infinite;
+}
+
+.landing-page::after {
+  top: 48rem;
+  left: -10rem;
+  width: 25rem;
+  height: 25rem;
+  background: rgba(153, 246, 228, 0.22);
+  filter: blur(18px);
+  animation: landing-orb-drift 18s ease-in-out -5s infinite reverse;
+}
+
+.landing-navbar {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px);
+}
+
+.landing-navbar-scrolled {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.landing-hero {
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-position: center;
+  background-size: 4rem 4rem;
+}
+
+.landing-hero::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.65) 48%, transparent 76%);
+  content: '';
+  pointer-events: none;
+  transform: translateX(-100%);
+  animation: landing-sheen 10s ease-in-out infinite;
+}
+
+.landing-reveal {
+  animation: landing-reveal 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-reveal-delay {
+  animation-delay: 120ms;
+}
+
+.landing-preview {
+  animation: landing-float 7s ease-in-out infinite;
+}
+
+.landing-preview-glow {
+  position: absolute;
+  inset: 12% 8% 8%;
+  border-radius: 2rem;
+  background: rgba(147, 197, 253, 0.42);
+  filter: blur(36px);
+  animation: landing-glow-pulse 5s ease-in-out infinite;
+}
+
+.landing-preview-note {
+  animation: landing-float 7s ease-in-out 1s infinite;
+}
+
+.landing-step-line {
+  position: absolute;
+  left: 3rem;
+  right: -2rem;
+  top: 1.4rem;
+  height: 1px;
+  background: #dbeafe;
+}
+
+.landing-feature {
+  display: flex;
+  min-height: 15rem;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 1.35rem;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.landing-feature:hover {
+  border-color: #bfdbfe;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.09);
+  transform: translateY(-3px);
+}
+
+.landing-feature-featured {
+  grid-column: span 2;
+  min-height: 17rem;
+  background: linear-gradient(135deg, #eff6ff, #ffffff 65%);
+}
+
+.landing-audience {
+  min-height: 18rem;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.landing-audience:hover {
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.09);
+  transform: translateY(-3px);
+}
+
+.landing-audience-patient { background: #eff6ff; }
+.landing-audience-doctor { background: #ecfdf5; }
+.landing-audience-pharmacy { background: #f5f3ff; }
+
+@keyframes landing-reveal {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes landing-orb-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-18px, 22px, 0) scale(1.08); }
+}
+
+@keyframes landing-glow-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.98); }
+  50% { opacity: 0.9; transform: scale(1.04); }
+}
+
+@keyframes landing-sheen {
+  0%, 55% { transform: translateX(-100%); }
+  78%, 100% { transform: translateX(100%); }
+}
+
+@media (max-width: 639px) {
+  .landing-feature-featured {
+    grid-column: span 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -256,6 +426,11 @@ a:not([class]):hover {
     animation-iteration-count: 1 !important;
     transition-duration: 0s !important;
     scroll-behavior: auto !important;
+  }
+
+  .landing-feature,
+  .landing-audience {
+    transition: none;
   }
 }
 

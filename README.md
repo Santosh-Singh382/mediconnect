@@ -1,6 +1,6 @@
-# MediConnect
+# Telemedicine for Rural Healthcare
 
-Telemedicine and pharmacy platform connecting patients, doctors, pharmacies, and administrators in a single workflow: find a doctor, book an appointment, consult via chat or video, receive a prescription, manage medical records, and order prescribed medicines.
+Telemedicine for Rural Healthcare is a telemedicine and pharmacy platform connecting patients, doctors, pharmacies, and administrators in a single workflow: find a doctor, book an appointment, consult via chat or video, receive a prescription, manage medical records, and order prescribed medicines.
 
 ## Stack
 
@@ -14,7 +14,7 @@ Telemedicine and pharmacy platform connecting patients, doctors, pharmacies, and
 ## Repository layout
 
 ```
-MediConnect/
+Telemedicine/
 ├── client/   # React single-page application
 └── server/   # Express REST API + Socket.IO server
 ```
@@ -105,7 +105,7 @@ The health response includes a `database` field:
 
 ## Authentication
 
-MediConnect uses JSON Web Tokens for authentication. Passwords are hashed with
+Telemedicine uses JSON Web Tokens for authentication. Passwords are hashed with
 bcrypt; plaintext passwords and password hashes are never returned by the API.
 
 - Public registration is available for `PATIENT`, `DOCTOR`, and `PHARMACY` roles.

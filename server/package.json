@@ -1,7 +1,7 @@
 {
   "name": "mediconnect-server",
   "version": "0.1.0",
-  "description": "MediConnect REST API and real-time server",
+  "description": "Telemedicine REST API and real-time server",
   "private": true,
   "main": "src/server.js",
   "type": "commonjs",

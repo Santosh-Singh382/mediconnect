@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import PublicHeader from '../components/PublicHeader.jsx'
+import { BRAND_NAME } from '../lib/branding.js'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import { getDoctors } from '../lib/doctorsApi.js'
@@ -192,7 +193,7 @@ export default function DoctorSearchPage() {
           <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">
-                MediConnect care network
+                {BRAND_NAME} care network
               </p>
               <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
                 Find care that fits you

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
+import { BRAND_NAME } from '../lib/branding.js'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import { getDoctorProfile, saveDoctorProfile } from '../lib/doctorApi.js'
@@ -446,7 +447,7 @@ export default function DoctorProfilePage() {
                 <p className="text-sm text-slate-600">
                   Your profile is <VerificationBadge status="PENDING" /> and
                   will be reviewed by the platform. Verification status is
-                  managed by MediConnect and cannot be changed here.
+                  managed by {BRAND_NAME} and cannot be changed here.
                 </p>
               </Card>
             )}

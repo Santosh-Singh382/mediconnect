@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
+import { BRAND_NAME } from '../lib/branding.js'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import {
@@ -284,7 +285,7 @@ export default function PharmacyProfilePage() {
               My pharmacy profile
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              These details identify your pharmacy across MediConnect.
+              These details identify your pharmacy across {BRAND_NAME}.
             </p>
             </div>
           </div>
@@ -332,7 +333,7 @@ export default function PharmacyProfilePage() {
               <Card title="Verification">
                 <p className="text-sm text-slate-600">
                   Your profile is <VerificationBadge status={profile.verificationStatus} />.
-                  Verification is managed by MediConnect and cannot be changed
+                  Verification is managed by {BRAND_NAME} and cannot be changed
                   here.
                 </p>
               </Card>
@@ -341,7 +342,7 @@ export default function PharmacyProfilePage() {
                 <p className="text-sm text-slate-600">
                   New pharmacy profiles start as{' '}
                   <VerificationBadge status="PENDING" />. Verification is
-                  managed by MediConnect and cannot be changed here.
+                  managed by {BRAND_NAME} and cannot be changed here.
                 </p>
               </Card>
             )}

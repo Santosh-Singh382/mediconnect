@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import api from '../lib/api.js'
+import { BRAND_NAME } from '../lib/branding.js'
 
 const STATES = {
   LOADING: 'loading',
@@ -37,7 +38,7 @@ export default function SystemStatus() {
     [STATES.LOADING]: {
       dot: 'bg-slate-400 animate-pulse',
       label: 'Checking API status',
-      description: 'Contacting the MediConnect backend.',
+      description: `Contacting the ${BRAND_NAME} backend.`,
     },
     [STATES.ONLINE]: {
       dot: 'bg-emerald-500',

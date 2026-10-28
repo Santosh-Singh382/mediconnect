@@ -1,4 +1,5 @@
 import { useAuth } from '../hooks/useAuth.js'
+import { BRAND_NAME } from '../lib/branding.js'
 import WorkspaceShell from '../components/WorkspaceShell.jsx'
 
 const ROLE_LABELS = {
@@ -49,7 +50,7 @@ export default function AccountPage() {
                 {initials}
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">MediConnect account</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">{BRAND_NAME} account</p>
                 <h1 className="mt-2 text-3xl font-black tracking-tight">Welcome, {firstName}</h1>
                 <p className="mt-2 text-sm text-slate-300">Your personal account overview and security status.</p>
               </div>
@@ -76,7 +77,7 @@ export default function AccountPage() {
             <p className="mt-2 text-lg font-black text-slate-950">
               {new Date(user.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Thank you for choosing MediConnect</p>
+            <p className="mt-1 text-xs text-slate-500">Thank you for choosing {BRAND_NAME}</p>
           </div>
         </section>
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
+import { BRAND_NAME } from '../lib/branding.js'
 import AppHeader from '../components/AppHeader.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
@@ -271,7 +272,7 @@ export default function PharmacyDashboardPage() {
                       : 'Your verification was rejected. Review your details and contact the platform for help.'}
                 </p>
                 <p className="mt-3 text-xs text-slate-500">
-                  Verification status is managed by MediConnect and cannot be
+                  Verification status is managed by {BRAND_NAME} and cannot be
                   changed from this dashboard.
                 </p>
               </div>

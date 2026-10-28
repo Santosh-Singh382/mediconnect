@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { BRAND_NAME, PROJECT_NAME } from '../lib/branding.js'
 
 export default function AuthShell({ title, subtitle, children }) {
   return (
@@ -8,11 +9,11 @@ export default function AuthShell({ title, subtitle, children }) {
         <div className="absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-cyan-400/10 blur-3xl" aria-hidden="true" />
         <Link to="/" className="relative flex items-center gap-2.5 text-lg font-bold tracking-tight">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-xl">+</span>
-          Medi<span className="text-blue-400">Connect</span>
+          {BRAND_NAME}
         </Link>
 
         <div className="relative max-w-md">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-300">Your care, connected</p>
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-300">{PROJECT_NAME}</p>
           <h2 className="mt-5 text-4xl font-bold leading-tight tracking-tight xl:text-5xl">
             Healthcare that feels a little more human.
           </h2>
@@ -45,7 +46,7 @@ export default function AuthShell({ title, subtitle, children }) {
         <div className="flex items-center justify-between lg:justify-end">
           <Link to="/" className="flex items-center gap-2 text-base font-bold tracking-tight text-slate-900 lg:hidden">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-lg text-white">+</span>
-            Medi<span className="text-blue-600">Connect</span>
+            {BRAND_NAME}
           </Link>
           <Link to="/" className="text-sm font-semibold text-slate-500 transition hover:text-blue-600">
             Back to home <span aria-hidden="true">↗</span>
@@ -54,7 +55,7 @@ export default function AuthShell({ title, subtitle, children }) {
 
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-600">Welcome to MediConnect</p>
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-600">Welcome to {BRAND_NAME}</p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">{title}</h1>
             {subtitle ? <p className="mt-3 text-base leading-7 text-slate-600">{subtitle}</p> : null}
           </div>

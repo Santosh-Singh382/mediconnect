@@ -15,7 +15,7 @@ async function start() {
   const io = initSocket(server)
 
   await new Promise((resolve) => server.listen(env.port, resolve))
-  console.log(`MediConnect API listening on port ${env.port} (${env.nodeEnv})`)
+  console.log(`Telemedicine API listening on port ${env.port} (${env.nodeEnv})`)
 
   let shuttingDown = false
 
@@ -24,7 +24,7 @@ async function start() {
       return
     }
     shuttingDown = true
-    console.log(`${signal} received. Shutting down MediConnect API.`)
+    console.log(`${signal} received. Shutting down Telemedicine API.`)
 
     try {
       await new Promise((resolve) => io.close(resolve))
@@ -43,6 +43,6 @@ async function start() {
 }
 
 start().catch((error) => {
-  console.error(`Failed to start MediConnect API: ${error.message}`)
+  console.error(`Failed to start Telemedicine API: ${error.message}`)
   process.exit(1)
 })
