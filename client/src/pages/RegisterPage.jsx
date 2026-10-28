@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { getApiErrorMessage } from '../lib/apiError.js'
-import { homePathFor } from '../lib/homePath.js'
 import AuthShell from '../components/AuthShell.jsx'
 import { inputClass } from '../lib/formStyles.js'
 
@@ -50,14 +49,20 @@ export default function RegisterPage() {
 
     setSubmitting(true)
     try {
-      const sessionUser = await register({
+      await register({
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || undefined,
         password: form.password,
         role: form.role,
       })
-      navigate(homePathFor(sessionUser), { replace: true })
+      navigate('/login', {
+        replace: true,
+        state: {
+          registrationComplete: true,
+          registeredEmail: form.email.trim(),
+        },
+      })
     } catch (error) {
       setApiError(getApiErrorMessage(error))
     } finally {

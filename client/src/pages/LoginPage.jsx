@@ -67,6 +67,18 @@ export default function LoginPage() {
         </div>
       ) : null}
 
+      {location.state?.registrationComplete ? (
+        <div
+          role="status"
+          className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+        >
+          Account created successfully. Sign in to continue
+          {location.state.registeredEmail
+            ? ` as ${location.state.registeredEmail}.`
+            : '.'}
+        </div>
+      ) : null}
+
       <div className="mb-6 flex items-center justify-between rounded-xl bg-blue-50 px-4 py-3 text-xs text-blue-800">
         <span className="flex items-center gap-2 font-semibold">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">✓</span>
